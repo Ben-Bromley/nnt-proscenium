@@ -1,0 +1,3 @@
+# Get Involved
+
+<!-- A simple guide on how to sign up for tech roles on shows and information on any training workshops being run. -->
