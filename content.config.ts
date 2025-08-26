@@ -31,5 +31,12 @@ export default defineContentConfig({
         })),
       }),
     }),
+    wiki: defineCollection({
+      type: 'page',
+      source: 'wiki/**',
+      schema: z.object({
+        redirect: z.string().optional(),
+      }),
+    })
   },
 })
