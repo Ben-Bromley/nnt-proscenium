@@ -100,8 +100,6 @@
 </template>
 
 <script setup lang="ts">
-import { registerSchema } from '~/utils/validation'
-
 definePageMeta({
   middleware: 'guest',
 })
@@ -112,7 +110,7 @@ const { register: createAccount, isLoggedIn } = useAuth()
 const showSuccessMessage = ref(false)
 
 const form = useForm({
-  schema: registerSchema,
+  schema: registerFormSchema,
   initialValues: {
     name: '',
     email: '',

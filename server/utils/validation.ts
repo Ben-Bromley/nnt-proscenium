@@ -1,24 +1,3 @@
-import { z } from 'zod'
-
-/**
- * Common validation schemas and helpers
- */
-
-/**
- * Email validation schema
- */
-export const emailSchema = z.string().email('Invalid email address')
-
-/**
- * Password validation schema
- */
-export const passwordSchema = z.string().min(8, 'Password must be at least 8 characters')
-
-/**
- * Name validation schema
- */
-export const nameSchema = z.string().min(1, 'Name is required').max(100, 'Name too long')
-
 /**
  * Validation helper for pagination
  */

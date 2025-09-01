@@ -88,8 +88,9 @@ const successMessage = ref('')
 
 // Reset password form (for completing password reset with token)
 const form = useForm({
-  schema: resetPasswordSchema,
+  schema: resetPasswordFormSchema,
   initialValues: {
+    token: route.query.token as string || '',
     newPassword: '',
     confirmPassword: '',
   },

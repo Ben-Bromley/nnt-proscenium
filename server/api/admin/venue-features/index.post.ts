@@ -45,6 +45,7 @@ export default defineEventHandler(async (event) => {
       name: validatedData.name,
       description: validatedData.description,
       icon: validatedData.icon,
+      isActive: validatedData.isActive,
     })
 
     return successResponse(

@@ -145,8 +145,6 @@
 </template>
 
 <script setup lang="ts">
-import { userUpdateSchema } from '~~/shared/schemas/user'
-
 definePageMeta({
   middleware: ['auth', () => {
     const { user } = useUserSession()
@@ -184,7 +182,7 @@ const membershipOptions = [
 ]
 
 const form = useForm({
-  schema: userUpdateSchema,
+  schema: userSetupFormSchema,
   initialValues: userData.value?.data?.user || {},
   onSubmit: async (_values, changedValues) => {
     try {

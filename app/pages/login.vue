@@ -115,8 +115,6 @@
 </template>
 
 <script setup lang="ts">
-import { loginSchema } from '~/utils/validation'
-
 definePageMeta({
   middleware: 'guest',
 })
@@ -130,7 +128,7 @@ const userEmail = ref('')
 const isResendingEmail = ref(false)
 
 const form = useForm({
-  schema: loginSchema,
+  schema: loginFormSchema,
   initialValues: {
     email: '',
     password: '',

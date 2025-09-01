@@ -1,8 +1,3 @@
-import type {
-  ValidationError,
-  HttpStatusCode,
-} from './base'
-
 /**
  * General API patterns and utilities
  */
@@ -104,4 +99,19 @@ export interface HealthCheckResponse {
     status: 'available' | 'unavailable'
     responseTime?: number
   }>
+}
+
+export interface PaginationParams {
+  page?: number
+  limit?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+// Pagination response data
+export interface PaginationInfo {
+  page: number
+  total: number
+  pages: number
+  limit: number
 }

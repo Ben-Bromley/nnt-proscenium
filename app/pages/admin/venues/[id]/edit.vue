@@ -195,9 +195,6 @@
 </template>
 
 <script setup lang="ts">
-import type { VenueResponse } from '~~/shared/types/api'
-import { venueEditFormSchema } from '~/utils/validation'
-
 // Require admin access
 definePageMeta({
   middleware: 'admin',
@@ -281,7 +278,7 @@ const handleFormSubmit = async (values: typeof defaultFormData, changedValues?: 
 const form = useForm({
   initialValues: defaultFormData,
   onSubmit: handleFormSubmit,
-  schema: venueEditFormSchema,
+  schema: venueUpdateFormSchema,
 })
 
 // Individual reactive form fields

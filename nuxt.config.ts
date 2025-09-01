@@ -16,10 +16,6 @@ export default defineNuxtConfig({
     ],
   },
 
-  imports: {
-    dirs: ['shared/schemas/**'],
-  },
-
   devtools: { enabled: true },
 
   css: ['~/assets/styles/main.css', '~/assets/styles/typography.css', '~/assets/styles/variables.css', '~/assets/styles/shared/forms.css', '~/assets/styles/prose.css'],
@@ -66,9 +62,6 @@ export default defineNuxtConfig({
           },
         },
       },
-    },
-    imports: {
-      dirs: ['shared/schemas/**'],
     },
   },
 

@@ -251,6 +251,7 @@ export async function createVenueFeature(featureData: {
   name: string
   description?: string
   icon?: string
+  isActive?: boolean
 }): Promise<VenueFeatureRaw> {
   // Check if feature name already exists
   const existingFeature = await prisma.venueFeature.findUnique({
@@ -268,6 +269,7 @@ export async function createVenueFeature(featureData: {
       name: featureData.name,
       description: featureData.description,
       icon: featureData.icon,
+      isActive: featureData.isActive ?? true,
     },
     select: venueFeatureSelectQuery,
   })

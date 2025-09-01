@@ -1,5 +1,5 @@
 /**
- * PATCH /api/users/me
+ * PATCH /api/account
  *
  * Updates the current authenticated user's profile and account information.
  *
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
     const isSetup = query.setup === 'true'
 
     // Validate input
-    const result = (isSetup ? userSetupSchema : userUpdateSchema).safeParse(body)
+    const result = userUpdateSchema.safeParse(body)
     if (!result.success) {
       throw dbErrors.validation('Invalid input data', result.error.issues)
     }
@@ -76,16 +76,13 @@ export default defineEventHandler(async (event) => {
     const data = result.data
 
     // Extract fields from validated data
-    const {
-      socialLinks,
-      studentId,
-      membershipType,
-      ...profileData
-    } = data
+    const { profile, membership, studentId } = data
+    const socialLinks = profile?.socialLinks
+    const membershipType = membership?.type
 
     // Handle email and password from userUpdateSchema only (not in setup)
     const email = !isSetup && 'email' in data ? data.email : undefined
-    const newPassword = !isSetup && 'newPassword' in data ? data.newPassword : undefined
+    const newPassword = !isSetup && 'newPassword' in data ? (data as { newPassword?: string }).newPassword : undefined
 
     // Check for conflicts
     if (studentId) {
@@ -146,8 +143,44 @@ export default defineEventHandler(async (event) => {
     }
 
     // Profile updates
-    if (Object.keys(profileData).length > 0) {
-      updates.profile = profileData
+    if (profile) {
+      // Extract profile fields excluding socialLinks
+      const { socialLinks: _, ...profileFields } = profile
+
+      // Convert gradYear from string to number if needed
+      const processedProfileFields: Partial<{
+        name: string
+        bio: string | null
+        avatar: string | null
+        gradYear: number | null
+        course: string | null
+      }> = {}
+
+      // Copy fields with proper type conversion
+      if (profileFields.name !== undefined) {
+        processedProfileFields.name = profileFields.name
+      }
+      if (profileFields.bio !== undefined) {
+        processedProfileFields.bio = profileFields.bio || null
+      }
+      if (profileFields.avatar !== undefined) {
+        processedProfileFields.avatar = profileFields.avatar || null
+      }
+      if (profileFields.gradYear !== undefined) {
+        if (typeof profileFields.gradYear === 'string') {
+          processedProfileFields.gradYear = parseInt(profileFields.gradYear, 10)
+        }
+        else {
+          processedProfileFields.gradYear = profileFields.gradYear
+        }
+      }
+      if (profileFields.course !== undefined) {
+        processedProfileFields.course = profileFields.course || null
+      }
+
+      if (Object.keys(processedProfileFields).length > 0) {
+        updates.profile = processedProfileFields
+      }
     }
 
     // Social links updates

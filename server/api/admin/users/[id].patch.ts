@@ -114,8 +114,8 @@ export default defineEventHandler(async (event) => {
       userUpdates.studentId = userData.studentId
     }
 
-    if (userData.password) {
-      const hashedPassword = await hashPassword(userData.password)
+    if (userData.newPassword) {
+      const hashedPassword = await hashPassword(userData.newPassword)
       userUpdates.password = hashedPassword
     }
 
@@ -155,8 +155,39 @@ export default defineEventHandler(async (event) => {
     if (profile) {
       const { socialLinks, ...profileData } = profile
 
-      if (Object.keys(profileData).length > 0) {
-        updates.profile = profileData
+      // Convert gradYear from string to number if needed
+      const processedProfileData: Partial<{
+        name: string
+        bio: string | null
+        avatar: string | null
+        gradYear: number | null
+        course: string | null
+      }> = {}
+
+      // Copy fields with proper type conversion
+      if (profileData.name !== undefined) {
+        processedProfileData.name = profileData.name
+      }
+      if (profileData.bio !== undefined) {
+        processedProfileData.bio = profileData.bio || null
+      }
+      if (profileData.avatar !== undefined) {
+        processedProfileData.avatar = profileData.avatar || null
+      }
+      if (profileData.gradYear !== undefined) {
+        if (typeof profileData.gradYear === 'string') {
+          processedProfileData.gradYear = parseInt(profileData.gradYear, 10)
+        }
+        else {
+          processedProfileData.gradYear = profileData.gradYear
+        }
+      }
+      if (profileData.course !== undefined) {
+        processedProfileData.course = profileData.course || null
+      }
+
+      if (Object.keys(processedProfileData).length > 0) {
+        updates.profile = processedProfileData
       }
 
       if (socialLinks) {

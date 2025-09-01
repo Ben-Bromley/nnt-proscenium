@@ -26,15 +26,11 @@
 
           <FormInput
             id="email"
-            :model-value="email.value.value"
+            v-model="email"
             label="Email"
             type="email"
             autocomplete="email"
             placeholder="Enter your email address"
-            :error="email.error.value"
-            :touched="email.touched.value"
-            @update:model-value="email.setValue"
-            @blur="email.setTouched()"
           />
 
           <FormButton
@@ -58,8 +54,6 @@
 </template>
 
 <script setup lang="ts">
-import { forgotPasswordEmailSchema } from '~/utils/validation'
-
 definePageMeta({
   middleware: 'guest',
 })
@@ -70,7 +64,7 @@ const successMessage = ref('')
 
 // Email form (for initiating password reset)
 const emailForm = useForm({
-  schema: forgotPasswordEmailSchema,
+  schema: forgotPasswordFormSchema,
   initialValues: {
     email: '',
   },
@@ -104,8 +98,8 @@ const emailForm = useForm({
   },
 })
 
-// Form field registrations
-const email = emailForm.register('email', '')
+// Reactive form field
+const email = emailForm.reactiveField('email')
 </script>
 
 <style scoped>

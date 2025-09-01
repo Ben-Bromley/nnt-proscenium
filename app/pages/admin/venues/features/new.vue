@@ -77,8 +77,6 @@
 </template>
 
 <script setup lang="ts">
-import { venueFeatureCreateFormSchema } from '~/utils/validation'
-
 // Require admin access
 definePageMeta({
   middleware: 'admin',
