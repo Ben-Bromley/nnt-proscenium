@@ -25,8 +25,8 @@
         <!-- Reset password form (when valid token is present) -->
         <Form
           v-if="hasValidToken && !showSuccessMessage"
-          :error="resetForm.formError.value"
-          @submit="resetForm.handleSubmit"
+          :error="form.formError.value"
+          @submit="form.handleSubmit"
         >
           <p class="reset-password__description">
             Enter your new password below.
@@ -34,35 +34,27 @@
 
           <FormInput
             id="newPassword"
-            :model-value="newPassword.value.value"
+            v-model="newPassword"
             label="New Password"
             type="password"
             autocomplete="new-password"
             placeholder="Enter your new password"
-            :error="newPassword.error.value"
-            :touched="newPassword.touched.value"
-            @update:model-value="newPassword.setValue"
-            @blur="newPassword.setTouched()"
           />
 
           <FormInput
             id="confirmPassword"
-            :model-value="confirmPassword.value.value"
+            v-model="confirmPassword"
             label="Confirm New Password"
             type="password"
             autocomplete="new-password"
             placeholder="Confirm your new password"
-            :error="confirmPassword.error.value"
-            :touched="confirmPassword.touched.value"
-            @update:model-value="confirmPassword.setValue"
-            @blur="confirmPassword.setTouched()"
           />
 
           <FormButton
             type="submit"
-            :disabled="resetForm.isSubmitting.value || !resetForm.isValid.value"
+            :disabled="form.isSubmitting.value || !form.isValid.value"
           >
-            {{ resetForm.isSubmitting.value ? 'Resetting...' : 'Reset Password' }}
+            {{ form.isSubmitting.value ? 'Resetting...' : 'Reset Password' }}
           </FormButton>
         </Form>
 
@@ -97,7 +89,7 @@ const showSuccessMessage = ref(false)
 const successMessage = ref('')
 
 // Reset password form (for completing password reset with token)
-const resetForm = useForm({
+const form = useForm({
   schema: resetPasswordSchema,
   initialValues: {
     newPassword: '',
@@ -136,17 +128,34 @@ const resetForm = useForm({
         }
       }
 
-      resetForm.setFormError(errorMessage)
+      form.setFormError(errorMessage)
     }
   },
 })
 
-// Form field registrations
-const newPassword = resetForm.register('newPassword', '')
-const confirmPassword = resetForm.register('confirmPassword', '')
+// Use reactive fields that automatically handle blur/touch events
+const newPassword = form.reactiveField('newPassword')
+const confirmPassword = form.reactiveField('confirmPassword')
 </script>
 
 <style scoped>
+.reset-password__back {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--secondary-text-color);
+}
+
+.reset-password__link {
+  color: var(--nnt-purple);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.reset-password__link:hover {
+  text-decoration: underline;
+}
+
 .reset-password-container {
   display: flex;
   justify-content: center;
@@ -181,22 +190,5 @@ const confirmPassword = resetForm.register('confirmPassword', '')
   text-align: center;
   font-size: 0.875rem;
   line-height: 1.5;
-}
-
-.reset-password__back {
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.875rem;
-  color: var(--secondary-text-color);
-}
-
-.reset-password__link {
-  color: var(--nnt-purple);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.reset-password__link:hover {
-  text-decoration: underline;
 }
 </style>

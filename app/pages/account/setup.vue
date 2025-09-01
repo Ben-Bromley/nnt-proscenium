@@ -145,8 +145,7 @@
 </template>
 
 <script setup lang="ts">
-import { z } from 'zod'
-import type { MembershipType } from '@prisma/client'
+import { userUpdateSchema } from '~~/shared/schemas/user'
 
 definePageMeta({
   middleware: ['auth', () => {
@@ -175,46 +174,6 @@ const currentYear = new Date().getFullYear()
 // Load existing user data
 const { data: userData } = await useFetch('/api/account')
 
-// Extract initial values from user data
-const getInitialValues = () => {
-  const defaultValues = {
-    name: '',
-    bio: '',
-    membershipType: 'UNKNOWN',
-    studentId: '',
-    gradYear: '',
-    course: '',
-    github: '',
-    linkedin: '',
-    facebook: '',
-    instagram: '',
-    discord: '',
-  }
-
-  if (!userData.value?.data?.user) {
-    return defaultValues
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = userData.value.data.user as any
-  const profile = user.profile
-  const socialLinks = profile?.socialLinks
-
-  return {
-    name: profile?.name || '',
-    bio: profile?.bio || '',
-    membershipType: user.membership?.type || 'UNKNOWN',
-    studentId: user.studentId || '',
-    gradYear: profile?.gradYear ? String(profile.gradYear) : '',
-    course: profile?.course || '',
-    github: socialLinks?.github || '',
-    linkedin: socialLinks?.linkedin || '',
-    facebook: socialLinks?.facebook || '',
-    instagram: socialLinks?.instagram || '',
-    discord: socialLinks?.discord || '',
-  }
-}
-
 // Membership options
 const membershipOptions = [
   { label: 'Full Member', value: 'FULL' },
@@ -224,73 +183,14 @@ const membershipOptions = [
   { label: 'Guest', value: 'GUEST' },
 ]
 
-// Setup schema with conditional validation
-// TODO: Move this to shared/schemas
-const setupSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name too long'),
-  bio: z.string().max(500, 'Bio too long').optional(),
-  membershipType: z.enum(['FULL', 'ASSOCIATE', 'FELLOW', 'ALUMNI', 'GUEST', 'UNKNOWN'], {
-    required_error: 'Please select a membership type',
-  }).refine(val => val !== 'UNKNOWN', {
-    message: 'Please select a membership type',
-  }),
-  studentId: z.string().max(20, 'Student ID too long').optional(),
-  gradYear: z.string().optional(),
-  course: z.string().max(100, 'Course name too long').optional(),
-  github: z.string().url('Invalid GitHub URL').or(z.literal('')).optional(),
-  linkedin: z.string().url('Invalid LinkedIn URL').or(z.literal('')).optional(),
-  facebook: z.string().url('Invalid Facebook URL').or(z.literal('')).optional(),
-  instagram: z.string().max(50, 'Instagram handle too long').optional(),
-  discord: z.string().max(50, 'Discord username too long').optional(),
-}).superRefine((data, ctx) => {
-  // Validate graduation year if provided
-  if (data.gradYear && data.gradYear !== '') {
-    const year = parseInt(data.gradYear, 10)
-    if (isNaN(year) || year < 1900 || year > currentYear + 5) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Invalid graduation year',
-        path: ['gradYear'],
-      })
-    }
-
-    // Alumni can only have graduation years in the past
-    if (data.membershipType === 'ALUMNI' && year > currentYear) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Alumni must have a graduation year in the past',
-        path: ['gradYear'],
-      })
-    }
-  }
-})
-
 const form = useForm({
-  schema: setupSchema,
-  initialValues: getInitialValues(),
-  onSubmit: async (values) => {
+  schema: userUpdateSchema,
+  initialValues: userData.value?.data?.user || {},
+  onSubmit: async (_values, changedValues) => {
     try {
-      // Clean up social links - remove empty values
-      const socialLinks: Record<string, string> = {}
-      if (values.github) socialLinks.github = values.github
-      if (values.linkedin) socialLinks.linkedin = values.linkedin
-      if (values.facebook) socialLinks.facebook = values.facebook
-      if (values.instagram) socialLinks.instagram = values.instagram
-      if (values.discord) socialLinks.discord = values.discord
-
-      const payload = {
-        name: values.name,
-        bio: values.bio || undefined,
-        membershipType: values.membershipType as MembershipType,
-        studentId: values.studentId || undefined,
-        gradYear: values.gradYear && values.gradYear !== '' ? parseInt(values.gradYear, 10) : undefined,
-        course: values.course || undefined,
-        socialLinks: Object.keys(socialLinks).length > 0 ? socialLinks : undefined,
-      }
-
       await $fetch('/api/users/me?setup=true', {
         method: 'PATCH',
-        body: payload,
+        body: changedValues,
       })
 
       // Refresh auth state and redirect
@@ -311,10 +211,10 @@ const form = useForm({
 const nameField = form.reactiveField('name')
 const studentIdField = form.reactiveField('studentId')
 const membershipTypeField = form.reactiveField('membership.type')
-const membershipExpiryField = form.reactiveField<Date | null>('membership.expiry', null)
-const profileNameField = form.reactiveField('profile.name')
+const _membershipExpiryField = form.reactiveField<Date | null>('membership.expiry', null)
+const _profileNameField = form.reactiveField('profile.name')
 const profileBioField = form.reactiveField('profile.bio')
-const profileAvatarField = form.reactiveField('profile.avatar')
+const _profileAvatarField = form.reactiveField('profile.avatar')
 const profileGradYearField = form.reactiveField('profile.gradYear')
 const profileCourseField = form.reactiveField('profile.course')
 const socialGithubField = form.reactiveField('profile.socialLinks.github')

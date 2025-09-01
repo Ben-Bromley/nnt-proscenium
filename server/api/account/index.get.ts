@@ -1,5 +1,5 @@
 /**
- * GET /api/users/me
+ * GET /api/account
  *
  * Retrieves the current authenticated user's complete information from the database.
  *
