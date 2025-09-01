@@ -16,15 +16,26 @@ export default defineNuxtConfig({
     ],
   },
 
+  imports: {
+    dirs: ['~~/shared/schemas/**'],
+  },
+
   devtools: { enabled: true },
 
-  css: ['~/assets/styles/main.css', '~/assets/styles/typography.css', '~/assets/styles/variables.css', '~/assets/styles/shared/forms.css'],
+  css: ['~/assets/styles/main.css', '~/assets/styles/typography.css', '~/assets/styles/variables.css', '~/assets/styles/shared/forms.css', '~/assets/styles/prose.css'],
 
   content: {
     experimental: { sqliteConnector: 'native' },
     database: {
       type: 'd1',
       bindingName: 'DB',
+    },
+    build: {
+      markdown: {
+        highlight: {
+          theme: 'github-dark',
+        },
+      },
     },
   },
   compatibilityDate: '2025-07-15',

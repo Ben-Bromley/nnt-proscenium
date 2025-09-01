@@ -7,6 +7,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 html,
 body {
   background-color: var(--primary-bg-color);
@@ -132,4 +136,64 @@ hr {
 /* Page Layout */
 main {
   width: 100%;
+}
+
+/* Custom scrollbar utility classes */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--secondary-bg-color);
+  border-radius: var(--border-radius);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--border-radius);
+  transition: background-color var(--transition-fast);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--nnt-purple);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: var(--nnt-orange);
+}
+
+.custom-scrollbar::-webkit-scrollbar-corner {
+  background: var(--secondary-bg-color);
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) var(--secondary-bg-color);
+}
+
+/* Thin scrollbar variant */
+.custom-scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: var(--border-radius);
+  transition: background-color var(--transition-fast);
+}
+
+.custom-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: var(--nnt-purple);
+}
+
+.custom-scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
 }

@@ -2,6 +2,10 @@
   /* Base colors */
   --primary-bg-color: #1e1e1e;
   --secondary-bg-color: #2a2a2a;
+  --background-alt-color: var(--secondary-bg-color);
+  /* Alias for compatibility */
+  --background-accent-color: var(--primary-bg-color);
+  /* Alias for compatibility */
   --header-bg-color: #292b2e;
   --border-color: #404040;
   --border-color-light: #232323;
@@ -10,6 +14,7 @@
   --primary-text-color: #f8f9fa;
   --secondary-text-color: #888;
   --alt-text-color: #292b2e;
+  /* For dark text on light backgrounds */
   --link-color: var(--nnt-orange);
 
   /* Brand colors */
@@ -41,6 +46,7 @@
   --page-max-width: 1140px;
   --border-radius: 0.5rem;
   --transition-fast: 0.2s ease;
+  --header-height: 80px;
 
   /* Media queries */
   --media-query-small: 768px;
