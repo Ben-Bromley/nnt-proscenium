@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   },
 
   imports: {
-    dirs: ['~~/shared/schemas/**'],
+    dirs: ['shared/schemas/**'],
   },
 
   devtools: { enabled: true },
@@ -66,6 +66,9 @@ export default defineNuxtConfig({
           },
         },
       },
+    },
+    imports: {
+      dirs: ['shared/schemas/**'],
     },
   },
 

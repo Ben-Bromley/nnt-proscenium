@@ -162,7 +162,7 @@ definePageMeta({
 
     // If user has already completed setup, redirect to profile
     if (user.value.setupCompleted) {
-      return navigateTo('/profile/me')
+      return navigateTo('/account')
     }
   }],
   layout: 'default',

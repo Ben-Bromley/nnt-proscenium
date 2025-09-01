@@ -72,8 +72,6 @@
 </template>
 
 <script setup lang="ts">
-import { resetPasswordSchema } from '~/utils/validation'
-
 definePageMeta({
   middleware: 'guest',
 })

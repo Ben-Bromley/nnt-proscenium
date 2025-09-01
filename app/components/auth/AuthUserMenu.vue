@@ -37,7 +37,7 @@
 
         <div class="user-menu__dropdown-items">
           <NuxtLink
-            to="/profile/me"
+            to="/account"
             class="user-menu__dropdown-item"
             role="menuitem"
             @click="closeMenu"
