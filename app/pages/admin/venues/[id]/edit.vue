@@ -224,7 +224,7 @@ const defaultFormData = {
   imageUrl: venue.value?.imageUrl || '',
   notes: venue.value?.notes || '',
   isActive: venue.value?.isActive ?? true,
-  featureIds: venue.value?.features.map(f => f.id) || [],
+  featureIds: venue.value?.features.map((f: NonNullable<typeof venue.value>['features'][0]) => f.id) || [],
 }
 
 // Form submission handler
@@ -235,7 +235,7 @@ const handleFormSubmit = async (values: typeof defaultFormData, changedValues?: 
   console.log('Changes detected:', Object.keys(changes).length, 'fields changed')
 
   // Check if features have changed separately since they're managed outside form state
-  const originalFeatureIds = venue.value?.features.map(f => f.id) || []
+  const originalFeatureIds = venue.value?.features.map((f: NonNullable<typeof venue.value>['features'][0]) => f.id) || []
   const currentFeatureIds = selectedFeatures.value
   const featuresChanged = JSON.stringify(originalFeatureIds.sort()) !== JSON.stringify(currentFeatureIds.sort())
 
@@ -290,7 +290,7 @@ const notesField = form.reactiveField('notes')
 const isActiveField = form.reactiveField<boolean>('isActive', true)
 
 // Selected features reactive state
-const selectedFeatures = ref<string[]>(venue.value?.features.map(f => f.id) || [])
+const selectedFeatures = ref<string[]>(venue.value?.features.map((f: NonNullable<typeof venue.value>['features'][0]) => f.id) || [])
 
 // Modal state for create feature warning
 const showCreateFeatureModal = ref(false)
@@ -321,7 +321,7 @@ const featureFields = computed(() => {
 // Update selectedFeatures when venue data loads
 watch(venue, (newVenue) => {
   if (newVenue) {
-    selectedFeatures.value = newVenue.features.map(f => f.id) || []
+    selectedFeatures.value = newVenue.features.map((f: NonNullable<typeof newVenue>['features'][0]) => f.id) || []
   }
 }, { immediate: true })
 
