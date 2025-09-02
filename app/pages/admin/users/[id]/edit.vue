@@ -243,7 +243,6 @@
 
 <script lang="ts" setup>
 import type { RoleType } from '@prisma/client'
-import type { UserResponse } from '~~/shared/types/api'
 import { parseDateFromApi, formatDateForApi } from '~/utils/dates'
 
 definePageMeta({
@@ -273,29 +272,29 @@ const user = computed(() => response.value?.data?.user)
 
 // Initialize form with default values
 const defaultFormData = {
-  email: response.value?.data?.user?.email || '',
-  studentId: response.value?.data?.user?.studentId || '',
+  email: user.value.email || '',
+  studentId: user.value.studentId || '',
   password: '',
-  emailVerified: response.value?.data?.user?.emailVerified || false,
-  setupCompleted: response.value?.data?.user?.setupCompleted || false,
-  isActive: response.value?.data?.user?.isActive ?? true,
-  roles: response.value?.data?.user?.roles || [],
+  emailVerified: user.value.emailVerified || false,
+  setupCompleted: user.value.setupCompleted || false,
+  isActive: user.value.isActive ?? true,
+  roles: user.value.roles || [],
   membership: {
-    type: response.value?.data?.user?.membership?.type || 'UNKNOWN',
-    expiry: parseDateFromApi(response.value?.data?.user?.membership?.expiry),
+    type: user.value.membership?.type || 'UNKNOWN',
+    expiry: parseDateFromApi(user.value.membership?.expiry),
   },
   profile: {
-    name: response.value?.data?.user?.profile?.name || '',
-    bio: response.value?.data?.user?.profile?.bio || '',
-    avatar: response.value?.data?.user?.profile?.avatar || '',
-    gradYear: response.value?.data?.user?.profile?.gradYear?.toString() || '',
-    course: response.value?.data?.user?.profile?.course || '',
+    name: user.value.profile?.name || '',
+    bio: user.value.profile?.bio || '',
+    avatar: user.value.profile?.avatar || '',
+    gradYear: user.value.profile?.gradYear?.toString() || '',
+    course: user.value.profile?.course || '',
     socialLinks: {
-      github: response.value?.data?.user?.profile?.socialLinks?.github || '',
-      linkedin: response.value?.data?.user?.profile?.socialLinks?.linkedin || '',
-      facebook: response.value?.data?.user?.profile?.socialLinks?.facebook || '',
-      discord: response.value?.data?.user?.profile?.socialLinks?.discord || '',
-      instagram: response.value?.data?.user?.profile?.socialLinks?.instagram || '',
+      github: user.value.profile?.socialLinks?.github || '',
+      linkedin: user.value.profile?.socialLinks?.linkedin || '',
+      facebook: user.value.profile?.socialLinks?.facebook || '',
+      discord: user.value.profile?.socialLinks?.discord || '',
+      instagram: user.value.profile?.socialLinks?.instagram || '',
     },
   },
 }
@@ -321,7 +320,7 @@ const handleFormSubmit = async (_values: typeof defaultFormData, changedValues?:
       const membership = value as typeof defaultFormData['membership']
       updateData.membership = {
         type: membership.type,
-        expiry: formatDateForApi(membership.expiry),
+        expiry: membership.expiry !== undefined ? formatDateForApi(membership.expiry) : null,
       }
     }
     else if (key === 'profile' && value) {
@@ -362,7 +361,7 @@ const setupCompletedField = form.reactiveField<boolean>('setupCompleted')
 const isActiveField = form.reactiveField<boolean>('isActive')
 const rolesField = form.reactiveField<RoleType[]>('roles', [])
 const membershipTypeField = form.reactiveField('membership.type')
-const membershipExpiryField = form.reactiveField<Date | null>('membership.expiry', null)
+const membershipExpiryField = form.reactiveField<Date>('membership.expiry')
 const profileNameField = form.reactiveField('profile.name')
 const profileBioField = form.reactiveField('profile.bio')
 const profileAvatarField = form.reactiveField('profile.avatar')
