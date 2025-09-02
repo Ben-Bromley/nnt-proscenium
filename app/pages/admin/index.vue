@@ -32,7 +32,7 @@ const adminSections = [
     title: 'Venues',
     description: 'Manage theatre venues and spaces.',
     path: '/admin/venues',
-    icon: 'settings',
+    icon: 'door',
   },
   {
     title: 'Shows',
@@ -56,7 +56,7 @@ const adminSections = [
     title: 'Tickets',
     description: 'Manage ticketing and reservations.',
     path: '/admin/tickets',
-    icon: 'email',
+    icon: 'ticket',
   },
   {
     title: 'Front of House',
