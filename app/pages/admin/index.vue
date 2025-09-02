@@ -41,6 +41,12 @@ const adminSections = [
     icon: 'menu',
   },
   {
+    title: 'Content Warnings',
+    description: 'Manage content warnings for shows and performances.',
+    path: '/admin/content-warnings',
+    icon: 'warning',
+  },
+  {
     title: 'Festivals',
     description: 'Manage festival events and programming.',
     path: '/admin/festivals',

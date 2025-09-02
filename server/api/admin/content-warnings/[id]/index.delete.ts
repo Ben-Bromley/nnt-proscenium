@@ -48,6 +48,82 @@
  * - 409: Content warning is in use and cannot be deleted without force
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    // Admin access required
+    await requireRole(event, 'ADMIN')
+
+    const contentWarningId = getRouterParam(event, 'id')
+    if (!contentWarningId) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Content warning ID is required',
+      })
+    }
+
+    // Check if the content warning exists and get usage info
+    const existingWarning = await prisma.contentWarning.findUnique({
+      where: { id: contentWarningId },
+      select: {
+        id: true,
+        name: true,
+        _count: {
+          select: {
+            shows: true,
+          },
+        },
+      },
+    })
+
+    if (!existingWarning) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Content warning not found',
+      })
+    }
+
+    // Check if content warning is in use
+    if (existingWarning._count.shows > 0) {
+      // Soft delete by deactivating instead of hard delete
+      const deactivatedWarning = await prisma.contentWarning.update({
+        where: { id: contentWarningId },
+        data: {
+          isActive: false,
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          icon: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
+            select: {
+              shows: true,
+            },
+          },
+        },
+      })
+
+      return successResponse({
+        contentWarning: deactivatedWarning,
+        message: `Content warning "${existingWarning.name}" has been deactivated as it is currently used by ${existingWarning._count.shows} show(s). It can still be reactivated later.`,
+      })
+    }
+
+    // Hard delete if not in use
+    await prisma.contentWarning.delete({
+      where: { id: contentWarningId },
+    })
+
+    return successResponse({
+      message: `Content warning "${existingWarning.name}" has been permanently deleted.`,
+    })
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

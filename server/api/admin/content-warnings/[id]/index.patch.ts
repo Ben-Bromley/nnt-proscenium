@@ -1,3 +1,5 @@
+import { updateContentWarningWithRelations } from '~~/server/utils/database/content-warning'
+
 /**
  * PATCH /api/admin/content-warnings/[id]
  *
@@ -51,5 +53,35 @@
  * - 500: Internal server error
  */
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    // Admin access required
+    await requireRole(event, 'ADMIN')
+
+    const contentWarningId = getRouterParam(event, 'id')
+    if (!contentWarningId) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Content warning ID is required',
+      })
+    }
+
+    const body = await readBody(event)
+    const { name, description, icon, isActive } = body
+
+    // Update content warning using database helper
+    const contentWarning = await updateContentWarningWithRelations(contentWarningId, {
+      name,
+      description,
+      icon,
+      isActive,
+    })
+
+    return successResponse({
+      contentWarning,
+      message: 'Content warning updated successfully',
+    })
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

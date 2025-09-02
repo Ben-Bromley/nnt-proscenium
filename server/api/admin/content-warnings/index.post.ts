@@ -1,3 +1,5 @@
+import { createContentWarningWithRelations } from '~~/server/utils/database/content-warning'
+
 /**
  * POST /api/admin/content-warnings
  *
@@ -46,5 +48,27 @@
  * - 500: Internal server error
  */
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    // Admin access required
+    await requireRole(event, 'ADMIN')
+
+    const body = await readBody(event)
+    const { name, description, icon, isActive = true } = body
+
+    // Create the content warning using database helper
+    const contentWarning = await createContentWarningWithRelations({
+      name,
+      description,
+      icon,
+      isActive,
+    })
+
+    return successResponse({
+      contentWarning,
+      message: 'Content warning created successfully',
+    })
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

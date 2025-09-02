@@ -54,5 +54,38 @@
  * - 500: Internal server error
  */
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    // Admin access required
+    await requireRole(event, 'ADMIN')
+
+    const query = getQuery(event)
+
+    // Validate pagination and sorting
+    const { page, limit, skip } = validatePagination(query)
+    const { sortBy, sortOrder } = validateSort(query, [
+      'createdAt', 'name', 'updatedAt',
+    ])
+
+    // Filter parameters
+    const search = query.search as string
+    const isActive = query.is_active !== undefined ? query.is_active === 'true' : undefined
+
+    // Get content warnings using database helper
+    const { contentWarnings, total } = await getContentWarnings({
+      search,
+      isActive,
+      sortBy: sortBy as 'name' | 'createdAt' | 'updatedAt',
+      sortOrder,
+      limit,
+      skip,
+    })
+
+    return paginatedResponse(
+      contentWarnings,
+      { page, total, limit },
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })
