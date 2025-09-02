@@ -1,3 +1,5 @@
+import { createTicketType } from '~~/server/utils/database/ticket'
+
 /**
  * POST /api/admin/tickets
  *
@@ -8,22 +10,14 @@
  * @param {string} name - Ticket type name (e.g., "Student", "Member", "Standard")
  * @param {string} [description] - Detailed description of the ticket type
  * @param {number} defaultPrice - Default price in currency units (e.g., pence)
+ * @param {number} [sortOrder] - Display order for this ticket type
  * @param {boolean} [isActive=true] - Whether this ticket type is active
  *
  * Response:
  * {
  *   success: boolean,
- *   data: {
- *     ticketType: {
- *       id: string,
- *       name: string,
- *       description: string | null,
- *       defaultPrice: number,
- *       isActive: boolean,
- *       createdAt: string,
- *       updatedAt: string
- *     }
- *   }
+ *   data: TicketType,
+ *   message: string
  * }
  *
  * Validation:
@@ -33,10 +27,9 @@
  *
  * Process:
  * 1. Authenticates admin user
- * 2. Validates input data
- * 3. Checks for duplicate ticket type names
- * 4. Creates new ticket type record
- * 5. Returns created ticket type
+ * 2. Validates input data using Zod schema
+ * 3. Uses database helper to create ticket type (handles uniqueness checks)
+ * 4. Returns created ticket type
  *
  * Error Responses:
  * - 400: Invalid input data
@@ -46,5 +39,23 @@
  * - 500: Internal server error
  */
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    await requireRole(event, 'ADMIN')
+
+    const body = await readBody(event)
+
+    // Validate request body using Zod schema
+    const validatedData = ticketTypeCreateSchema.parse(body)
+
+    // Use database helper to create ticket type
+    const ticketType = await createTicketType(validatedData)
+
+    return successResponse(
+      ticketType,
+      `Ticket type "${ticketType.name}" created successfully`,
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })
