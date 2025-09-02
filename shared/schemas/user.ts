@@ -60,7 +60,7 @@ export const userUpdateSchema = z.object({
   profile: profileSchema.optional(),
   membership: z.object({
     type: z.nativeEnum(MembershipType),
-    expiry: z.date().optional(),
+    expiry: z.date().optional().nullable(),
   }).optional(),
   studentId: studentIdSchema,
 }).refine(validateGradYear)
@@ -126,7 +126,7 @@ export const adminUserEditFormSchema = z.object({
   roles: z.array(z.nativeEnum(RoleType)),
   membership: z.object({
     type: z.nativeEnum(MembershipType),
-    expiry: z.string().optional(), // String in form for date picker
+    expiry: z.date().nullable(), // Date in form for date picker
   }),
   profile: formProfileSchema,
 }).refine(validateGradYear)

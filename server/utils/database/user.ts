@@ -1,5 +1,70 @@
 import prisma from '~~/lib/prisma'
 import type { Prisma, MembershipType, RoleType } from '@prisma/client'
+import { dbErrors } from './index'
+
+/**
+ * User creation data
+ */
+export interface UserCreateData {
+  email: string
+  password: string
+  emailVerificationToken?: string
+  emailVerificationExpires?: Date
+  profile?: {
+    name: string
+    bio?: string
+    avatar?: string
+    gradYear?: number
+    course?: string
+    socialLinks?: {
+      github?: string
+      linkedin?: string
+      facebook?: string
+      discord?: string
+      instagram?: string
+    }
+  }
+  membership?: {
+    type: MembershipType
+    expiry?: Date | null
+  }
+}
+
+/**
+ * User update data
+ */
+export interface UserUpdateData {
+  user?: Partial<{
+    email: string
+    studentId: string | null
+    password: string
+    emailVerified: boolean
+    emailVerificationToken: string | null
+    emailVerificationExpires: Date | null
+    setupCompleted: boolean
+    setupCompletedAt: Date | null
+    isActive: boolean
+  }>
+  profile?: Partial<{
+    name: string
+    bio: string | null
+    avatar: string | null
+    gradYear: number | null
+    course: string | null
+  }>
+  socialLinks?: Partial<{
+    github: string | null
+    linkedin: string | null
+    facebook: string | null
+    discord: string | null
+    instagram: string | null
+  }>
+  membership?: {
+    type: MembershipType
+    expiry?: Date | null
+  }
+  roles?: RoleType[]
+}
 
 /**
  * Standardised user selection for consistent data across endpoints
@@ -48,30 +113,7 @@ export type UserWithRelationsRaw = Prisma.UserGetPayload<{
 /**
  * Create a new user with all required relations using batch transaction
  */
-export async function createUserWithRelations(userData: {
-  email: string
-  password: string
-  emailVerificationToken?: string
-  emailVerificationExpires?: Date
-  profile?: {
-    name: string
-    bio?: string
-    avatar?: string
-    gradYear?: number
-    course?: string
-    socialLinks?: {
-      github?: string
-      linkedin?: string
-      facebook?: string
-      discord?: string
-      instagram?: string
-    }
-  }
-  membership?: {
-    type: MembershipType
-    expiry?: Date | null
-  }
-}): Promise<UserWithRelationsRaw> {
+export async function createUserWithRelations(userData: UserCreateData): Promise<UserWithRelationsRaw> {
   const operations = []
 
   // Create user operation
@@ -165,38 +207,7 @@ export async function getUserWithRelations(userId: string): Promise<UserWithRela
  */
 export async function updateUserWithRelations(
   userId: string,
-  updates: {
-    user?: Partial<{
-      email: string
-      studentId: string | null
-      password: string
-      emailVerified: boolean
-      emailVerificationToken: string | null
-      emailVerificationExpires: Date | null
-      setupCompleted: boolean
-      setupCompletedAt: Date | null
-      isActive: boolean
-    }>
-    profile?: Partial<{
-      name: string
-      bio: string | null
-      avatar: string | null
-      gradYear: number | null
-      course: string | null
-    }>
-    socialLinks?: Partial<{
-      github: string | null
-      linkedin: string | null
-      facebook: string | null
-      discord: string | null
-      instagram: string | null
-    }>
-    membership?: {
-      type: MembershipType
-      expiry?: Date | null
-    }
-    roles?: RoleType[]
-  },
+  updates: UserUpdateData,
 ): Promise<UserWithRelationsRaw> {
   const operations = []
 

@@ -1,5 +1,51 @@
 import prisma from '~~/lib/prisma'
 import type { Prisma } from '@prisma/client'
+import { dbErrors } from './index'
+
+/**
+ * Venue creation data
+ */
+export interface VenueCreateData {
+  name: string
+  address?: string
+  capacity?: number
+  imageUrl?: string
+  notes?: string
+  featureIds?: string[]
+}
+
+/**
+ * Venue update data
+ */
+export interface VenueUpdateData {
+  name?: string
+  address?: string
+  capacity?: number | null
+  imageUrl?: string
+  notes?: string
+  isActive?: boolean
+  featureIds?: string[]
+}
+
+/**
+ * Venue feature creation data
+ */
+export interface VenueFeatureCreateData {
+  name: string
+  description?: string
+  icon?: string
+  isActive?: boolean
+}
+
+/**
+ * Venue feature update data
+ */
+export interface VenueFeatureUpdateData {
+  name?: string
+  description?: string
+  icon?: string
+  isActive?: boolean
+}
 
 /**
  * Standardised venue selection for consistent data across endpoints
@@ -72,14 +118,7 @@ export async function getVenueWithRelations(venueId: string): Promise<VenueWithR
 /**
  * Create a new venue with optional features
  */
-export async function createVenueWithFeatures(venueData: {
-  name: string
-  address?: string
-  capacity?: number
-  imageUrl?: string
-  notes?: string
-  featureIds?: string[]
-}): Promise<VenueWithRelationsRaw> {
+export async function createVenueWithFeatures(venueData: VenueCreateData): Promise<VenueWithRelationsRaw> {
   // Check if venue name already exists
   const existingVenue = await prisma.venue.findUnique({
     where: { name: venueData.name },
@@ -130,15 +169,7 @@ export async function createVenueWithFeatures(venueData: {
  */
 export async function updateVenueWithFeatures(
   venueId: string,
-  updates: {
-    name?: string
-    address?: string
-    capacity?: number | null
-    imageUrl?: string
-    notes?: string
-    isActive?: boolean
-    featureIds?: string[]
-  },
+  updates: VenueUpdateData,
 ): Promise<VenueWithRelationsRaw> {
   // Check if venue exists
   const existingVenue = await prisma.venue.findUnique({
@@ -247,12 +278,7 @@ export async function getVenueFeatureWithVenues(featureId: string) {
 /**
  * Create a new venue feature
  */
-export async function createVenueFeature(featureData: {
-  name: string
-  description?: string
-  icon?: string
-  isActive?: boolean
-}): Promise<VenueFeatureRaw> {
+export async function createVenueFeature(featureData: VenueFeatureCreateData): Promise<VenueFeatureRaw> {
   // Check if feature name already exists
   const existingFeature = await prisma.venueFeature.findUnique({
     where: { name: featureData.name },
@@ -282,12 +308,7 @@ export async function createVenueFeature(featureData: {
  */
 export async function updateVenueFeature(
   featureId: string,
-  updates: {
-    name?: string
-    description?: string
-    icon?: string
-    isActive?: boolean
-  },
+  updates: VenueFeatureUpdateData,
 ): Promise<VenueFeatureRaw> {
   // Check if feature exists
   const existingFeature = await prisma.venueFeature.findUnique({
