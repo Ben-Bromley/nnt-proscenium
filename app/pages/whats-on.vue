@@ -5,7 +5,9 @@
 </template>
 
 <script lang="ts" setup>
-
+definePageMeta({
+  title: 'What\'s On',
+})
 </script>
 
 <style scoped>

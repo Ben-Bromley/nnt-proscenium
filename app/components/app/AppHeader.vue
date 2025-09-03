@@ -1,149 +1,94 @@
 <template>
-  <header class="app-header">
-    <nav class="app-header__nav">
+  <UHeader>
+    <template #left>
       <NuxtLink
         to="/"
         aria-label="Home | The Nottingham New Theatre"
-        class="app-header__logo-link"
       >
         <BrandLogo />
       </NuxtLink>
-      <div class="app-header__nav-container">
-        <ul class="app-header__nav-list">
-          <li
-            v-for="link in links"
-            :key="link.url"
-            class="app-header__nav-item"
+    </template>
+
+    <template #default>
+      <UNavigationMenu
+        :items="links"
+        orientation="horizontal"
+        class="hidden md:flex"
+      />
+    </template>
+
+    <template #right>
+      <div class="flex items-center gap-4">
+        <div class="hidden md:flex items-center gap-2">
+          <template
+            v-for="button in buttons"
+            :key="button.url"
           >
-            <NuxtLink
-              :to="link.url"
-              class="app-header__nav-link"
-            >
-              <template v-if="link.button">
-                <UIButton :variant="link.variant">
-                  {{ link.text }}
-                </UIButton>
-              </template>
-              <template v-else>
-                {{ link.text }}
-              </template>
-            </NuxtLink>
-          </li>
-        </ul>
-        <AuthStatus />
+            <UButton
+              :to="button.to"
+              :color="button.color"
+              :label="button.label"
+              size="lg"
+            />
+          </template>
+        </div>
+        <AuthStatus /> <!-- TODO: Replace with Nuxt UI component -->
       </div>
-    </nav>
-  </header>
+    </template>
+
+    <!-- Mobile menu -->
+    <template #body>
+      <UNavigationMenu
+        :items="allNavigationItems"
+        orientation="vertical"
+      />
+    </template>
+  </UHeader>
 </template>
 
 <script lang="ts" setup>
-const { data } = await useAsyncData('header', () => {
-  return queryCollection('header').first()
-})
+import type { NavigationMenuItem, ButtonProps } from '@nuxt/ui'
 
-const { links } = data.value || { links: [] }
+// Navigation links (non-button links)
+const links: NavigationMenuItem[] = [
+  {
+    label: 'About',
+    to: '/about',
+  },
+  {
+    label: 'StuFF',
+    to: '/festival',
+  },
+  {
+    label: 'Alumni',
+    to: '/alumni',
+  },
+  {
+    label: 'Technical',
+    to: '/technical',
+  },
+]
+
+// Button links
+const buttons: ButtonProps[] = [
+  {
+    label: 'Get Involved',
+    to: '/get-involved',
+    color: 'primary',
+  },
+  {
+    label: 'What\'s On',
+    to: '/whats-on',
+    color: 'secondary',
+  },
+]
+
+// All items for mobile menu
+const allNavigationItems = [
+  ...links,
+  ...buttons.map(button => ({
+    label: button.label,
+    to: button.to,
+  })),
+]
 </script>
-
-<style scoped>
-.app-header {
-  background-color: var(--header-bg-color);
-  border-bottom: 1px solid var(--border-color-light);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-}
-
-.app-header__nav {
-  max-width: var(--page-max-width);
-  display: flex;
-  padding: 1.2rem;
-  margin: 0 auto;
-  justify-content: space-between;
-  align-items: center;
-  align-self: stretch;
-}
-
-.app-header__nav-container {
-  display: flex;
-  gap: var(--spacing-md);
-  align-items: center;
-  justify-content: flex-end;
-}
-
-.app-header__nav-list {
-  list-style: none;
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--spacing-md);
-  padding: 0;
-  align-items: center;
-  margin: 0;
-}
-
-.app-header__nav-link {
-  color: var(--primary-text-color);
-}
-
-.app-header__nav-link:hover,
-.app-header__nav-link:active,
-.app-header__nav-link:focus {
-  color: var(--link-color);
-  text-decoration: none;
-}
-
-.app-header--narrow {
-  display: none;
-}
-
-/* Mobile responsive styles */
-@media (max-width: 768px) {
-  .app-header__nav {
-    padding: 1rem var(--spacing-lg);
-  }
-
-  .app-header--wide {
-    display: none;
-  }
-
-  .app-header--narrow {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .app-header--narrow .app-header__nav-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-  }
-
-  .app-header--narrow .app-header__icon {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--primary-text-color);
-    font-size: 2rem;
-  }
-
-  .app-header--narrow .app-header__nav-list {
-    display: none;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    padding: 4rem 0;
-    width: 100%;
-  }
-
-  .app-header--narrow .app-header__nav-list--open {
-    display: flex;
-  }
-}
-
-/* Ensure auth status is properly sized on mobile */
-@media (max-width: 480px) {
-  .app-header__nav-container {
-    gap: var(--spacing-sm);
-  }
-}
-</style>
