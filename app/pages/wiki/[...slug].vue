@@ -1,73 +1,104 @@
 <template>
   <div>
-    <!-- Breadcrumbs -->
-    <WikiBreadcrumbs
-      :current-path="$route.path"
-      :page-title="page?.title"
-    />
-
-    <!-- Show page content if it exists -->
-    <article
-      v-if="page"
-      class="prose"
-    >
-      <ContentRenderer :value="page" />
-    </article>
-
-    <!-- Show children grid if page has children -->
-    <div v-if="hasChildren">
-      <WikiGrid
-        :navigation="navigation || []"
-        :current-path="$route.path"
+    <UPage v-if="page">
+      <UPageHeader
+        :title="page.title"
+        :description="page.description"
       />
-    </div>
 
-    <!-- Show 404 if neither page nor children exist -->
-    <!-- TODO: Throw a 404 error instead (once I've added a custom error.vue page) -->
-    <div
-      v-else-if="!page && !hasChildren"
-      class="not-found"
-    >
-      <h1>Page Not Found</h1>
-      <p>The requested wiki page could not be found.</p>
-      <NuxtLink
-        to="/wiki"
-        class="back-link"
+      <UPageBody>
+        <ContentRenderer
+          v-if="page.body"
+          :value="page"
+        />
+
+        <!-- Show children grid if page has children -->
+        <template v-if="children?.length">
+          <USeparator color="neutral" />
+
+          <div>
+            <h2 class="text-2xl font-semibold mb-4">
+              Sections
+            </h2>
+            <UPageGrid>
+              <UPageCard
+                v-for="child in children"
+                :key="child.path || child.children?.[0]?.path"
+                :title="child.title"
+                :description="child.description as string"
+                :to="child.path || child.children?.[0]?.path"
+                :icon="child.icon as string"
+              />
+            </UPageGrid>
+          </div>
+        </template>
+
+        <USeparator
+          v-if="surround?.length"
+          color="neutral"
+        />
+
+        <UContentSurround :surround="surround" />
+      </UPageBody>
+
+      <template
+        v-if="page?.body?.toc?.links?.length"
+        #right
       >
-        ← Back to Wiki
-      </NuxtLink>
-    </div>
+        <UContentToc :links="page.body.toc.links" />
+      </template>
+    </UPage>
 
-    <!-- Show pagination for document pages -->
-    <WikiPagination
-      v-if="page && navigation && navigation.length > 0"
-      :navigation="navigation"
-      :current-path="$route.path"
-    />
-
-    <!-- Edit actions for existing pages -->
-    <WikiEditActions
-      v-if="page"
-      :current-path="$route.path"
-    />
-
+    <!-- Development Info -->
     <DevOnly>
-      <hr>
-      <div class="debug-info">
-        <h3>Debug Info:</h3>
-        <p><strong>Path:</strong> {{ $route.path }}</p>
-        <p><strong>Has Page:</strong> {{ !!page }}</p>
-        <p><strong>Has Children:</strong> {{ hasChildren }}</p>
-        <p><strong>Page Title:</strong> {{ pageTitle }}</p>
-        <details>
-          <summary>Page Data</summary>
-          <pre>{{ page }}</pre>
-        </details>
-        <details>
-          <summary>Navigation Data</summary>
-          <pre>{{ navigation }}</pre>
-        </details>
-      </div>
+      <UCard>
+        <template #header>
+          <h3>
+            Development Info
+          </h3>
+        </template>
+
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="font-medium">Path:</span>
+              <UBadge variant="soft">
+                {{ $route.path }}
+              </UBadge>
+            </div>
+            <div>
+              <span class="font-medium">Has Page:</span>
+              <UBadge
+                :color="page ? 'success' : 'error'"
+                variant="soft"
+              >
+                {{ !!page }}
+              </UBadge>
+            </div>
+            <div>
+              <span class="font-medium">Has Children:</span>
+              <UBadge
+                :color="children?.length ? 'success' : 'neutral'"
+                variant="soft"
+              >
+                {{ children?.length || 0 }}
+              </UBadge>
+            </div>
+            <div>
+              <span class="font-medium">Page Title:</span>
+              <UBadge variant="soft">
+                {{ pageTitle }}
+              </UBadge>
+            </div>
+          </div>
+
+          <UAccordion :items="debugItems">
+            <template #body="{ item }">
+              <pre>{{ item.content }}</pre>
+            </template>
+          </UAccordion>
+        </div>
+      </UCard>
     </DevOnly>
   </div>
 </template>
@@ -75,22 +106,36 @@
 <script lang="ts" setup>
 import type { ContentNavigationItem } from '@nuxt/content'
 
-const route = useRoute()
-
-// Set layout and handle redirects
+// Set layout
 definePageMeta({
   layout: 'wiki',
 })
 
-// Fetch page content
-const { data: page } = await useAsyncData(route.path, async () => {
-  try {
-    return await queryCollection('wiki').path(route.path).first()
-  }
-  catch {
-    // Page doesn't exist - that's fine, we'll check for children
-    return null
-  }
+// Fetch navigation data for the sidebar
+const route = useRoute()
+
+// Get navigation from layout
+const navigation = inject<ContentNavigationItem[]>('navigation', [])
+
+const { data: page } = await useAsyncData(route.path, () => queryCollection('wiki').path(route.path).first())
+if (!page.value) {
+  throw createError({ statusCode: 404, statusMessage: 'Page not found', fatal: true })
+}
+
+const { data: surround } = await useAsyncData(`${route.path}-surround`, () => {
+  return queryCollectionItemSurroundings('wiki', route.path, {
+    fields: ['description'],
+  })
+})
+
+const title = page.value.seo?.title || page.value.title
+const description = page.value.seo?.description || page.value.description
+
+useSeoMeta({
+  title,
+  ogTitle: title,
+  description,
+  ogDescription: description,
 })
 
 // Handle redirects if page has redirect property
@@ -98,20 +143,16 @@ if (page.value?.redirect) {
   await navigateTo(page.value.redirect, { redirectCode: 301, replace: true })
 }
 
-// Fetch navigation data
-const { data: navigation } = await useAsyncData('wiki-navigation', async () => {
-  try {
-    return await queryCollectionNavigation('wiki')
-  }
-  catch (error) {
-    console.warn('Failed to load wiki navigation', error)
-    return []
-  }
-})
+// Get children for current page
+const children = computed(() => {
+  if (!navigation.length) return []
 
-// Check if current path has children
-const hasChildren = computed(() => {
-  if (!navigation.value) return false
+  // For the wiki index page, show all top-level sections except the homepage itself
+  if (route.path === '/wiki' || route.path === '/wiki/') {
+    return navigation.filter(item => item.path !== '/wiki' && item.path !== '/wiki/')
+  }
+
+  // For other pages, find their children in the navigation
 
   const findPageInNavigation = (items: ContentNavigationItem[], targetPath: string): ContentNavigationItem | null => {
     for (const item of items) {
@@ -126,8 +167,13 @@ const hasChildren = computed(() => {
     return null
   }
 
-  const currentNavItem = findPageInNavigation(navigation.value, route.path)
-  return currentNavItem?.children && currentNavItem.children.length > 0
+  const currentNavItem = findPageInNavigation(navigation, route.path)
+  return currentNavItem?.children || []
+})
+
+// Check if current path has children
+const hasChildren = computed(() => {
+  return children.value && children.value.length > 0
 })
 
 // Generate page title from path if no page content
@@ -145,78 +191,27 @@ const pageTitle = computed(() => {
   return 'Wiki'
 })
 
+// Debug items for development
+const debugItems = computed(() => [
+  {
+    label: 'Page Data',
+    content: JSON.stringify(page.value, null, 2),
+    defaultOpen: false,
+  },
+  {
+    label: 'Navigation Data',
+    content: JSON.stringify(navigation, null, 2),
+    defaultOpen: false,
+  },
+  {
+    label: 'Children Data',
+    content: JSON.stringify(children.value, null, 2),
+    defaultOpen: false,
+  },
+])
+
 // Set proper status code for 404s
 if (import.meta.server && !page.value && !hasChildren.value) {
   setResponseStatus(404)
 }
 </script>
-
-<style scoped>
-/* Updated to use project CSS variables for unified theming */
-.not-found {
-  text-align: center;
-  padding: var(--spacing-xxl) var(--spacing-md);
-}
-
-.not-found h1 {
-  color: var(--danger-color);
-  margin-bottom: var(--spacing-md);
-}
-
-.not-found p {
-  color: var(--alt-text-color);
-  margin-bottom: var(--spacing-xl);
-  font-size: 1.125rem;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  color: var(--nnt-purple);
-  text-decoration: none;
-  font-weight: 500;
-  padding: var(--spacing-sm) var(--spacing-xl);
-  border: 1px solid var(--nnt-purple);
-  border-radius: var(--border-radius);
-  transition: all var(--transition-fast);
-}
-
-.back-link:hover {
-  background-color: var(--nnt-purple);
-  color: white;
-}
-
-.debug-info {
-  border: 1px solid var(--border-color);
-  padding: var(--spacing-md);
-  margin-top: var(--spacing-xl);
-  border-radius: var(--border-radius-sm);
-  background-color: var(--background-alt-color);
-  font-size: 0.875rem;
-}
-
-.debug-info h3 {
-  margin: 0 0 var(--spacing-md) 0;
-  color: var(--primary-text-color);
-}
-
-.debug-info p {
-  margin: var(--spacing-xxs) 0;
-  color: var(--alt-text-color);
-}
-
-.debug-info details {
-  margin-top: var(--spacing-md);
-}
-
-.debug-info pre {
-  background-color: var(--background-accent-color);
-  color: var(--primary-text-color);
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-sm);
-  font-size: 0.75rem;
-  overflow-x: auto;
-  margin: var(--spacing-xs) 0;
-}
-</style>

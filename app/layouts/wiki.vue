@@ -1,137 +1,130 @@
 <template>
-  <div class="wiki-layout">
-    <AppHeader />
+  <UContainer>
+    <UPage>
+      <template #left>
+        <UPageAside v-if="navigation">
+          <!-- <template #top>
+            <UContentSearchButton :collapsed="false" />
+          </template> -->
 
-    <div class="wiki-container">
-      <!-- Left Sidebar - Navigation -->
-      <aside class="sidebar-nav">
-        <WikiNavigation
-          v-if="navigation && navigation.length > 0"
-          :navigation="navigation"
-          :current-path="$route.path"
-        />
-        <div
-          v-else
-          class="no-navigation"
-        >
-          <p>No navigation available</p>
-        </div>
-      </aside>
+          <UContentNavigation
+            :navigation="navigation"
+            type="multiple"
+            highlight
+          >
+            <!-- Custom link template that makes category headers clickable -->
+            <template #link="{ link, active }">
+              <component
+                :is="link.children?.length ? 'div' : 'span'"
+                class="flex items-center w-full"
+              >
+                <!-- Make category headers clickable -->
+                <ULink
+                  v-if="link.children?.length && link.path"
+                  :to="link.path"
+                  class="flex-1 flex items-center min-w-0 mr-2"
+                  :class="{ 'font-semibold text-primary-500': active }"
+                >
+                  <UIcon
+                    v-if="link.icon"
+                    :name="link.icon"
+                    class="w-4 h-4 mr-2 flex-shrink-0"
+                  />
+                  <span class="truncate">{{ link.title }}</span>
+                </ULink>
 
-      <!-- Main Content Area -->
-      <main class="main-content">
-        <slot />
-      </main>
+                <!-- Regular link for pages without children -->
+                <template v-else>
+                  <UIcon
+                    v-if="link.icon"
+                    :name="link.icon"
+                    class="w-4 h-4 mr-2 flex-shrink-0"
+                  />
+                  <span class="truncate">{{ link.title }}</span>
+                </template>
 
-      <!-- Right Sidebar - Table of Contents -->
-      <aside class="toc-sidebar">
-        <WikiTableOfContents :page="currentPage" />
-      </aside>
-    </div>
-  </div>
+                <!-- Badge and chevron for categories -->
+                <span
+                  v-if="link.children?.length"
+                  class="flex items-center flex-shrink-0 ml-auto"
+                >
+                  <UBadge
+                    v-if="link.badge"
+                    v-bind="typeof link.badge === 'object' ? link.badge : { label: link.badge }"
+                  />
+                  <UIcon
+                    name="i-heroicons-chevron-down"
+                    class="w-4 h-4 ml-1"
+                  />
+                </span>
+
+                <!-- Badge and trailing icon for regular links -->
+                <span
+                  v-else-if="link.badge || link.trailingIcon"
+                  class="flex items-center flex-shrink-0 ml-auto"
+                >
+                  <UBadge
+                    v-if="link.badge"
+                    v-bind="typeof link.badge === 'object' ? link.badge : { label: link.badge }"
+                  />
+                  <UIcon
+                    v-if="link.trailingIcon"
+                    :name="link.trailingIcon"
+                    class="w-4 h-4 ml-1"
+                  />
+                </span>
+              </component>
+            </template>
+          </UContentNavigation>
+        </UPageAside>
+      </template>
+
+      <slot />
+    </UPage>
+  </UContainer>
 </template>
 
 <script lang="ts" setup>
-// Fetch navigation data for the wiki
-const route = useRoute()
-const { data: navigation } = await useAsyncData(`wiki-navigation-${route.path}`, async () => {
-  try {
-    return await queryCollectionNavigation('wiki')
-  }
-  catch (error) {
-    console.warn('Failed to load wiki navigation', error)
-    return []
-  }
-})
+import type { ContentNavigationItem } from '@nuxt/content'
 
-// Fetch current page data for table of contents
-const { data: currentPage } = await useAsyncData(`wiki-page-toc-${route.path}`, () => {
-  return queryCollection('wiki').path(route.path).first()
-}, {
-  watch: [route],
-})
+const { data: rawNavigation } = await useAsyncData('wiki-navigation', () => queryCollectionNavigation('wiki'))
+
+// Process navigation to remove redundant children
+function processNavigation(items: ContentNavigationItem[]): ContentNavigationItem[] {
+  return items.map((item) => {
+    if (!item.children?.length) {
+      return item
+    }
+
+    // Create a copy to avoid mutating original data
+    const processedItem = { ...item }
+
+    // Process children recursively first
+    processedItem.children = processNavigation(item.children)
+
+    // Find children that have the same path as the parent
+    const duplicateChild = processedItem.children.find((child: ContentNavigationItem) => child.path === item.path)
+
+    if (duplicateChild) {
+      // Remove the duplicate child
+      processedItem.children = processedItem.children.filter((child: ContentNavigationItem) => child.path !== item.path)
+    }
+
+    // If this category has no actual page (page: false), remove the path to make it non-clickable
+    if (item.page === false) {
+      processedItem.path = ''
+    }
+
+    // If no children remain, remove the children array
+    if (processedItem.children.length === 0) {
+      delete processedItem.children
+    }
+
+    return processedItem
+  })
+}
+
+const navigation = processNavigation(rawNavigation.value?.[0]?.children || [])
+
+provide('navigation', navigation)
 </script>
-
-<style scoped>
-.wiki-layout {
-  min-height: 100vh;
-}
-
-.wiki-container {
-  display: grid;
-  grid-template-columns: 250px 1fr 200px;
-  gap: 2rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 1rem;
-  min-height: calc(100vh - var(--header-height));
-}
-
-.sidebar-nav {
-  position: sticky;
-  top: calc(var(--header-height) + 1rem); /* Header height + gap */
-  height: fit-content;
-  max-height: calc(100vh - var(--header-height) - 2rem - 2rem); /* viewport - header - top gap - bottom gap */
-  padding-bottom: 1rem; /* Ensure content doesn't touch the bottom */
-}
-
-.main-content {
-  min-width: 0;
-  padding: 0 1rem;
-}
-
-.toc-sidebar {
-  position: sticky;
-  top: calc(var(--header-height) + 1rem); /* Header height + gap */
-  height: fit-content;
-  max-height: calc(100vh - var(--header-height) - 2rem - 2rem); /* viewport - header - top gap - bottom gap */
-  padding-bottom: 1rem; /* Ensure content doesn't touch the bottom */
-}
-
-.no-navigation {
-  border: 1px solid var(--border-color);
-  padding: var(--spacing-lg);
-  border-radius: var(--border-radius);
-  background-color: var(--secondary-bg-color);
-}
-
-.no-navigation p {
-  margin: 0;
-  color: var(--secondary-text-color);
-  font-style: italic;
-  font-size: 0.9rem;
-}
-
-/* Responsive design */
-@media (max-width: 1024px) {
-  .wiki-container {
-    grid-template-columns: 200px 1fr;
-    gap: 1rem;
-  }
-
-  .toc-sidebar {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  .wiki-container {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-
-  .sidebar-nav {
-    position: static;
-    height: auto;
-    max-height: none;
-    order: 2;
-    top: auto;
-    padding-bottom: 0;
-  }
-
-  .main-content {
-    order: 1;
-    padding: 0;
-  }
-}
-</style>

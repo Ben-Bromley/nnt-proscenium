@@ -1,6 +1,7 @@
-# Editing the Wiki
-
-The New Theatre Wiki is a collaborative resource that anyone can help improve! Whether you're fixing a typo, adding new information, or creating entirely new pages, your contributions help keep our community informed.
+---
+title: Editing the Wiki
+description: The New Theatre Wiki is a collaborative resource that anyone can help improve! Whether you're fixing a typo, adding new information, or creating entirely new pages, your contributions help keep our community informed.
+---
 
 ## Quick Start
 
@@ -16,8 +17,6 @@ Don't worry if you're not familiar with GitHub - this page will guide you throug
 Each wiki page is written in **Markdown**, a simple text formatting language that's easy to learn. Here's what a typical page looks like:
 
 ```md
-# Page Title
-
 <!-- This is a comment explaining what this page is about -->
 
 Your content goes here using **bold text**, *italic text*, and [links](https://example.com).
@@ -47,14 +46,13 @@ More content here...
 ### Headings
 
 ```md
-# Main Title (only one per page)
 ## Major Section
 ### Subsection
 #### Minor Section
 ##### Smallest Section
 ```
 
-**Important:** Only use one `#` (main title) per page. Start sections with `##`.
+**Important:** Don't use `#` (main title) headings in wiki pages. The page title comes from the frontmatter. Start your first heading with `##`.
 
 ### Lists
 
