@@ -1,6 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: [
+    '@nuxt/ui',
     '@nuxt/content',
     '@nuxt/eslint',
     '@nuxt/fonts',
@@ -18,7 +19,12 @@ export default defineNuxtConfig({
 
   devtools: { enabled: true },
 
-  css: ['~/assets/styles/main.css', '~/assets/styles/typography.css', '~/assets/styles/variables.css', '~/assets/styles/shared/forms.css', '~/assets/styles/prose.css'],
+  css: ['~/assets/styles/main.css'],
+
+  colorMode: {
+    preference: 'dark',
+    fallback: 'dark',
+  },
 
   content: {
     experimental: { sqliteConnector: 'native' },
@@ -33,6 +39,18 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+  ui: {
+    theme: {
+      colors: ['primary', 'secondary', 'tertiary', 'success', 'info', 'warning', 'error'],
+      defaultVariants: {
+        color: 'primary',
+        size: 'md',
+      },
+      transitions: true,
+    },
+    prefix: 'U',
+    fonts: true,
   },
   compatibilityDate: '2025-07-15',
 
