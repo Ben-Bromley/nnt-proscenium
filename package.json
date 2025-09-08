@@ -18,13 +18,13 @@
     "@nuxt/image": "1.11.0",
     "@nuxt/ui": "^4.0.0-alpha.1",
     "@nuxtjs/seo": "3.1.0",
-    "@prisma/adapter-d1": "^6.13.0",
+    "@prisma/adapter-d1": "^6.15.0",
     "@prisma/nuxt": "0.3.0",
-    "eslint": "^9.0.0",
-    "nuxt": "^4.0.1",
+    "eslint": "^9.35.0",
+    "nuxt": "^4.1.1",
     "nuxt-auth-utils": "0.5.23",
-    "prisma": "^6.13.0",
-    "vue": "^3.5.18",
+    "prisma": "^6.15.0",
+    "vue": "^3.5.21",
     "vue-router": "^4.5.1"
   },
   "prisma": {
