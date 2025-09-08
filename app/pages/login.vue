@@ -1,288 +1,258 @@
 <template>
-  <div class="login-container">
-    <div class="login">
-      <h2 class="login__title">
-        Login to New Theatre
-      </h2>
-
-      <AppAlert v-if="isLoggedIn">
-        <!-- In theory this should never be displayed -->
-        You are already logged in. Redirecting...
-      </AppAlert>
-
-      <div
-        class="login__content"
+  <UContainer class="flex flex-col items-center justify-center min-h-[calc(100vh-(var(--ui-header-height)*2))] gap-4 p-4">
+    <UPageCard
+      class="w-full max-w-md"
+      highlight
+      highlight-color="secondary"
+    >
+      <UAuthForm
+        ref="loginForm"
+        :schema="schema"
+        :fields="loginFields"
+        title="Login"
+        icon="icon:account"
+        :loading="pending"
+        :disabled="pending"
+        @submit="onSubmit"
       >
-        <!-- Email verification error alert -->
-        <AppAlert
-          v-if="showEmailVerificationError"
-          type="error"
-        >
-          <div class="email-verification-error">
-            <p>Your email address has not been verified.</p>
-            <p>Please check your inbox for a verification link. If you didn't receive the email, you can request a new one.</p>
-            <div class="email-verification-error__actions">
-              <UIButton
-                type="button"
-                variant="ghost"
-                :loading="isResendingEmail"
-                full-width
-                @click="resendVerificationEmail"
-              >
-                {{ isResendingEmail ? 'Sending...' : 'Resend verification link' }}
-              </UIButton>
-            </div>
-          </div>
-        </AppAlert>
+        <template #password-hint>
+          <ULink
+            to="/forgot-password"
+            class="text-primary font-medium"
+            tabindex="-1"
+          >
+            Forgot password?
+          </ULink>
+        </template>
 
-        <!-- Email resend success alert -->
-        <AppAlert
-          v-if="showResendSuccess"
-          type="success"
-        >
-          Verification email sent! Please check your inbox for a new verification link.
-        </AppAlert>
+        <template #validation>
+          <!-- Email verification alert -->
+          <UAlert
+            v-if="error?.statusCode === 403 && !resendSuccess"
+            color="warning"
+            icon="i-lucide-mail"
+            title="Email verification required"
+            class="mb-4"
+          >
+            <template #description>
+              <div class="space-y-3">
+                <div>
+                  <p>Your email address has not been verified.</p>
+                  <p>Please check your inbox for a verification link.</p>
+                </div>
+                <UButton
+                  color="neutral"
+                  variant="outline"
+                  size="sm"
+                  :loading="resendPending"
+                  :disabled="resendPending"
+                  block
+                  @click="resendVerificationEmail"
+                >
+                  {{ resendPending ? 'Sending...' : 'Resend verification email' }}
+                </UButton>
+              </div>
+            </template>
+          </UAlert>
 
-        <Form
-          :error="form.formError.value"
-          @submit="form.handleSubmit"
-        >
-          <FormInput
-            id="email"
-            v-model="email"
-            label="Email"
-            type="email"
-            autocomplete="email"
-            placeholder="Enter your email"
+          <!-- Resend success alert -->
+          <UAlert
+            v-else-if="resendSuccess"
+            color="success"
+            icon="i-lucide-check-circle"
+            title="Verification email sent!"
+            description="Please check your inbox for a new verification link."
+            class="mb-4"
           />
 
-          <FormInput
-            id="password"
-            v-model="password"
-            label="Password"
-            type="password"
-            autocomplete="current-password"
-            placeholder="Enter your password"
+          <!-- General error alert -->
+          <UAlert
+            v-else-if="error && error.statusCode !== 403"
+            color="error"
+            icon="i-lucide-alert-circle"
+            :title="getErrorTitle(error.statusCode)"
+            :description="getErrorMessage(error)"
+            class="mb-4"
           />
+        </template>
 
-          <div class="login-form__forgot-password">
-            <NuxtLink
-              to="/forgot-password"
-              class="login-form__link"
-            >
-              Forgot your password?
-            </NuxtLink>
-          </div>
-
-          <div class="login-form__actions">
-            <FormButton
-              type="submit"
-              :disabled="form.isSubmitting.value || !form.isValid.value"
-            >
-              {{ form.isSubmitting.value ? 'Signing in...' : 'Sign In' }}
-            </FormButton>
-
-            <LayoutDivider text="or" />
-
-            <UIButton
-              type="button"
-              variant="ghost"
-              :loading="form.isSubmitting.value"
-              full-width
-              disabled
-              @click="void 0"
-            >
-              <Icon
-                name="icon:google"
-                alt="Committee"
-                class="login-form__icon"
-              />
-              Committee? Login with Google SSO
-            </UIButton>
-          </div>
-
-          <p class="login-form__register">
-            Don't have an account?
-            <NuxtLink
-              to="/register"
-              class="login-form__link"
-            >Register</NuxtLink>
-          </p>
-        </Form>
-      </div>
-    </div>
-  </div>
+        <template #footer>
+          Don't have an account?
+          <ULink
+            to="/register"
+            class="text-primary font-medium"
+          >
+            Sign up
+          </ULink>
+        </template>
+      </UAuthForm>
+    </UPageCard>
+  </UContainer>
 </template>
 
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import type { H3Error } from 'h3'
+
+// Define the page metadata
 definePageMeta({
   middleware: 'guest',
+  title: 'Login',
+  description: 'Sign in to your account',
 })
 
-const { login, isLoggedIn } = useAuth()
+// Use the auth composable
+const { login, pending, error } = useAuth()
+const toast = useToast()
 
-// Email verification state
-const showEmailVerificationError = ref(false)
-const showResendSuccess = ref(false)
-const userEmail = ref('')
-const isResendingEmail = ref(false)
+// Resend email state
+const resendPending = ref(false)
+const resendSuccess = ref(false)
 
-const form = useForm({
-  schema: loginFormSchema,
-  initialValues: {
-    email: '',
-    password: '',
-  },
-  onSubmit: async (values) => {
-    try {
-      // Reset email verification error state
-      showEmailVerificationError.value = false
-      showResendSuccess.value = false
+// Expose form state to template
+const loginForm = useTemplateRef('loginForm')
 
-      // Call your authentication API
-      await login(values)
-
-      // Redirect on success
-      await navigateTo('/')
-    }
-    catch (error) {
-      // Handle errors - display user-friendly error message
-      console.error('Login failed:', error)
-
-      // Check if this is an email verification error
-      if (error && typeof error === 'object') {
-        // Check statusMessage first (from API error response)
-        if ('statusMessage' in error && typeof error.statusMessage === 'string' && error.statusMessage.includes('Email not verified')) {
-          showEmailVerificationError.value = true
-          userEmail.value = values.email // Use the email from the form
-          return // Don't show generic error for this case
-        }
-      }
-
-      // Extract error message for display
-      let errorMessage = 'An unexpected error occurred. Please try again.'
-
-      if (error && typeof error === 'object') {
-        // Check for statusMessage first (from useFetch error response)
-        if ('statusMessage' in error && error.statusMessage) {
-          errorMessage = String(error.statusMessage)
-        }
-        // Fallback to nested data.message
-        else if ('data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
-          errorMessage = String(error.data.message)
-        }
-        // Fallback to direct message property
-        else if ('message' in error) {
-          errorMessage = String(error.message)
-        }
-      }
-
-      // Set the form error to display to user
-      form.setFormError(errorMessage)
-    }
-  },
+// Login form schema
+const schema = z.object({
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters'),
+  // remember: z.boolean().optional(),
 })
 
-// Function to resend verification email
-const resendVerificationEmail = async () => {
-  if (!userEmail.value) return
+type Schema = z.output<typeof schema>
 
-  isResendingEmail.value = true
-  showResendSuccess.value = false
+// Define form fields
+const loginFields = [
+  {
+    name: 'email',
+    type: 'text' as const,
+    label: 'Email',
+    placeholder: 'Enter your email address',
+    required: true,
+    autocomplete: 'email',
+  },
+  {
+    name: 'password',
+    type: 'password' as const,
+    label: 'Password',
+    placeholder: 'Enter your password',
+    required: true,
+    autocomplete: 'current-password',
+  },
+  // {
+  //   name: 'remember',
+  //   type: 'checkbox' as const,
+  //   label: 'Remember me',
+  // },
+]
 
+// Handle form submission
+async function onSubmit(event: FormSubmitEvent<Schema>) {
   try {
-    await $fetch('/api/auth/email/resend', {
-      method: 'POST',
-      body: { email: userEmail.value },
+    resendSuccess.value = false
+    await login(event.data)
+
+    // Success toast
+    toast.add({
+      title: 'Welcome back!',
+      description: 'You have been successfully signed in.',
+      color: 'success',
+      icon: 'i-lucide-check-circle',
     })
 
-    // Show success message
-    showResendSuccess.value = true
-    showEmailVerificationError.value = false
-    form.setFormError('') // Clear any existing errors
+    // Redirect to intended page or dashboard
+    await navigateTo('/')
   }
-  catch (error) {
-    console.error('Failed to resend verification email:', error)
-    form.setFormError('Failed to resend verification email. Please try again.')
+  catch (err) {
+    // Error handling is managed by the auth composable
+    // The error will be displayed in the validation template
+    console.error('Login error:', err)
+  }
+}
+
+// Resend verification email
+async function resendVerificationEmail() {
+  try {
+    resendPending.value = true
+
+    // Get the email from the form state
+    const email = loginForm.value?.state.email || ''
+
+    if (!email) {
+      toast.add({
+        title: 'Error',
+        description: 'Please enter your email address first.',
+        color: 'error',
+      })
+      return
+    }
+
+    // Call resend verification endpoint
+    await $fetch('/api/auth/email/resend', {
+      method: 'POST',
+      body: { email },
+    })
+
+    resendSuccess.value = true
+
+    toast.add({
+      title: 'Email sent!',
+      description: 'Please check your inbox for a new verification link.',
+      color: 'success',
+    })
+  }
+  catch (err) {
+    console.error('Resend verification error:', err)
+    toast.add({
+      title: 'Error',
+      description: 'Failed to send verification email. Please try again.',
+      color: 'error',
+    })
   }
   finally {
-    isResendingEmail.value = false
+    resendPending.value = false
   }
 }
 
-// Use reactive fields that automatically handle blur/touch events
-const email = form.reactiveField('email')
-const password = form.reactiveField('password')
+// Error message helpers
+function getErrorTitle(statusCode?: number): string {
+  switch (statusCode) {
+    case 400:
+      return 'Invalid input'
+    case 401:
+      return 'Invalid credentials'
+    case 403:
+      return 'Email verification required'
+    case 429:
+      return 'Too many attempts'
+    case 500:
+      return 'Server error'
+    default:
+      return 'Sign in failed'
+  }
+}
+
+function getErrorMessage(error: H3Error): string {
+  switch (error.statusCode) {
+    case 400:
+      return 'Please check your input and try again.'
+    case 401:
+      return 'The email or password you entered is incorrect.'
+    case 403:
+      return 'Please verify your email address to continue.'
+    case 429:
+      return 'Too many login attempts. Please try again later.'
+    case 500:
+      return 'Something went wrong on our end. Please try again.'
+    default:
+      return 'An unexpected error occurred. Please try again.'
+  }
+}
 </script>
-
-<style scoped>
-.login-form {
-  max-width: 400px;
-  margin: 0 auto;
-}
-
-.login-form__actions {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1.5rem;
-}
-
-.login-form__forgot-password {
-  text-align: right;
-  margin-bottom: 1.5rem;
-}
-
-.login-form__icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 0.5rem;
-}
-
-.login-form__register {
-  text-align: center;
-  font-size: 0.875rem;
-  color: var(--secondary-text-color);
-}
-
-.login-form__link {
-  color: var(--nnt-purple);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.login-form__link:hover {
-  text-decoration: underline;
-}
-
-.login-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 1.5rem;
-}
-
-.login {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: var(--nnt-orange) solid 2px;
-}
-
-.login__title {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--primary-text-color);
-  font-weight: 600;
-}
-
-.login__content {
-  width: 100%;
-}
-
-.email-verification-error__actions {
-  margin-top: 1rem;
-}
-</style>

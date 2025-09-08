@@ -1,205 +1,195 @@
 <template>
-  <div class="registration-container">
-    <div class="registration">
-      <h2 class="registration__title">
-        Register for New Theatre
-      </h2>
-
-      <AppAlert v-if="isLoggedIn">
-        <!-- In theory this should never be displayed -->
-        You are already logged in. Redirecting...
-      </AppAlert>
-
-      <AppAlert type="error">
-        Registration is currently disabled. Please check back later.
-      </AppAlert>
-
-      <DevOnly
-        class="registration__content"
+  <UContainer class="flex flex-col items-center justify-center min-h-[calc(100vh-(var(--ui-header-height)*2))] gap-4 p-4">
+    <UPageCard
+      class="w-full max-w-md"
+      highlight
+      highlight-color="secondary"
+    >
+      <UAuthForm
+        ref="registerForm"
+        :schema="schema"
+        :fields="registerFields"
+        title="Create Account"
+        icon="i-lucide-user-plus"
+        :loading="pending"
+        :disabled="pending"
+        @submit="onSubmit"
       >
-        <!-- Show success message after registration -->
-        <AppAlert
-          v-if="showSuccessMessage"
-          type="success"
-        >
-          Registration successful! Please check your email for a verification link.
-        </AppAlert>
-
-        <Form
-          v-if="!showSuccessMessage"
-          :error="form.formError.value"
-          @submit="form.handleSubmit"
-        >
-          <FormInput
-            id="name"
-            v-model="name"
-            label="Name"
-            type="text"
-            autocomplete="name"
-            placeholder="Enter your name"
+        <template #validation>
+          <!-- Success alert -->
+          <UAlert
+            v-if="success"
+            color="success"
+            icon="i-lucide-check-circle"
+            title="Account created successfully!"
+            description="Please check your inbox for a verification email."
+            class="mb-4"
           />
 
-          <FormInput
-            id="email"
-            v-model="email"
-            label="Email"
-            type="email"
-            autocomplete="email"
-            placeholder="Enter your email"
+          <!-- General error alert -->
+          <UAlert
+            v-else-if="error"
+            color="error"
+            icon="i-lucide-alert-circle"
+            :title="getErrorTitle(error.statusCode)"
+            :description="getErrorMessage(error)"
+            class="mb-4"
           />
+        </template>
 
-          <FormInput
-            id="password"
-            v-model="password"
-            label="Password"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Enter your password"
-          />
-
-          <FormInput
-            id="confirmPassword"
-            v-model="confirmPassword"
-            label="Confirm Password"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Confirm your password"
-          />
-
-          <FormButton
-            type="submit"
-            :disabled="form.isSubmitting.value || !form.isValid.value"
+        <template #footer>
+          Already have an account?
+          <ULink
+            to="/login"
+            class="text-primary font-medium"
           >
-            {{ form.isSubmitting.value ? 'Creating account...' : 'Create Account' }}
-          </FormButton>
-
-          <p class="registration-form__login">
-            Already have an account?
-            <NuxtLink
-              to="/login"
-              class="registration-form__link"
-            >Sign in</NuxtLink>
-          </p>
-        </Form>
-
-        <!-- Show login button when registration is successful -->
-        <div
-          v-if="showSuccessMessage"
-          class="registration__success-actions"
-        >
-          <UIButton
-            full-width
-            @click="navigateTo('/login')"
-          >
-            Go to Login
-          </UIButton>
-        </div>
-      </DevOnly>
-    </div>
-  </div>
+            Sign in
+          </ULink>
+        </template>
+      </UAuthForm>
+    </UPageCard>
+  </UContainer>
 </template>
 
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import type { H3Error } from 'h3'
+
+// Define the page metadata
 definePageMeta({
   middleware: 'guest',
+  title: 'Register',
+  description: 'Create your account',
 })
 
-const { register: createAccount, isLoggedIn } = useAuth()
+// Use the auth composable
+const { register, pending, error } = useAuth()
+const toast = useToast()
 
 // Success state
-const showSuccessMessage = ref(false)
+const success = ref(false)
 
-const form = useForm({
-  schema: registerFormSchema,
-  initialValues: {
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  },
-  onSubmit: async (values) => {
-    try {
-      await createAccount(values)
+// Expose form state to template
+const registerForm = useTemplateRef('registerForm')
 
-      // Show success message instead of redirecting
-      showSuccessMessage.value = true
-    }
-    catch (error) {
-      // Handle errors - display user-friendly error message
-      console.error('Registration failed:', error)
-
-      // Extract error message for display
-      let errorMessage = 'An unexpected error occurred. Please try again.'
-
-      if (error && typeof error === 'object') {
-        if ('data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
-          errorMessage = String(error.data.message)
-        }
-        else if ('message' in error) {
-          errorMessage = String(error.message)
-        }
-      }
-
-      // Set the form error to display to user
-      form.setFormError(errorMessage)
-    }
-  },
+// Registration form schema
+const schema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .min(2, 'Name must be at least 2 characters'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z
+    .string()
+    .min(1, 'Please confirm your password'),
+}).refine(data => data.password === data.confirmPassword, {
+  message: 'Passwords don\'t match',
+  path: ['confirmPassword'],
 })
 
-const name = form.reactiveField('name')
-const email = form.reactiveField('email')
-const password = form.reactiveField('password')
-const confirmPassword = form.reactiveField('confirmPassword')
+type Schema = z.output<typeof schema>
+
+// Define form fields
+const registerFields = [
+  {
+    name: 'name',
+    type: 'text' as const,
+    label: 'Full Name',
+    placeholder: 'Enter your full name',
+    required: true,
+    autocomplete: 'name',
+  },
+  {
+    name: 'email',
+    type: 'email' as const,
+    label: 'Email',
+    placeholder: 'Enter your email address',
+    required: true,
+    autocomplete: 'email',
+  },
+  {
+    name: 'password',
+    type: 'password' as const,
+    label: 'Password',
+    placeholder: 'Enter your password',
+    required: true,
+    autocomplete: 'new-password',
+  },
+  {
+    name: 'confirmPassword',
+    type: 'password' as const,
+    label: 'Confirm Password',
+    placeholder: 'Confirm your password',
+    required: true,
+    autocomplete: 'new-password',
+  },
+]
+
+// Handle form submission
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  try {
+    success.value = false
+    await register(event.data)
+
+    // Success state
+    success.value = true
+
+    // Success toast
+    toast.add({
+      title: 'Account created!',
+      description: 'Please check your email for a verification link.',
+      color: 'success',
+      icon: 'i-lucide-check-circle',
+    })
+
+    // Redirect to login after a short delay
+    setTimeout(() => {
+      navigateTo('/login')
+    }, 3000)
+  }
+  catch (err) {
+    // Error handling is managed by the auth composable
+    // The error will be displayed in the validation template
+    console.error('Registration error:', err)
+  }
+}
+
+// Error message helpers
+function getErrorTitle(statusCode?: number): string {
+  switch (statusCode) {
+    case 400:
+      return 'Invalid input'
+    case 409:
+      return 'Email already exists'
+    case 422:
+      return 'Validation error'
+    case 500:
+      return 'Server error'
+    default:
+      return 'Registration failed'
+  }
+}
+
+function getErrorMessage(error: H3Error): string {
+  switch (error.statusCode) {
+    case 400:
+      return 'Please check your input and try again.'
+    case 409:
+      return 'An account with this email already exists.'
+    case 422:
+      return 'Please check your input and try again.'
+    case 500:
+      return 'Something went wrong on our end. Please try again.'
+    default:
+      return 'An unexpected error occurred. Please try again.'
+  }
+}
 </script>
-
-<style scoped>
-.registration-form__login {
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.875rem;
-  color: var(--secondary-text-color);
-}
-
-.registration-form__link {
-  color: var(--nnt-purple);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.registration-form__link:hover {
-  text-decoration: underline;
-}
-
-.registration-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 1.5rem;
-}
-
-.registration {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: var(--nnt-orange) solid 2px;
-}
-
-.registration__title {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--primary-text-color);
-  font-weight: 600;
-}
-
-.registration__content {
-  width: 100%;
-}
-
-.registration__success-actions {
-  text-align: center;
-  margin-top: 1.5rem;
-}
-</style>

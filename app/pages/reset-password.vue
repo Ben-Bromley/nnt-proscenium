@@ -1,193 +1,216 @@
 <template>
-  <div class="reset-password-container">
-    <div class="reset-password">
-      <h2 class="reset-password__title">
-        Reset Your Password
-      </h2>
-
-      <div class="reset-password__content">
-        <!-- Show success message if password was reset -->
-        <AppAlert
-          v-if="showSuccessMessage"
-          type="success"
-        >
-          {{ successMessage }}
-        </AppAlert>
-
-        <!-- Show error if token is invalid or missing -->
-        <AppAlert
-          v-if="!hasValidToken && !showSuccessMessage"
-          type="error"
-        >
-          Invalid or expired reset token. Please request a new password reset link.
-        </AppAlert>
-
-        <!-- Reset password form (when valid token is present) -->
-        <Form
-          v-if="hasValidToken && !showSuccessMessage"
-          :error="form.formError.value"
-          @submit="form.handleSubmit"
-        >
-          <p class="reset-password__description">
-            Enter your new password below.
-          </p>
-
-          <FormInput
-            id="newPassword"
-            v-model="newPassword"
-            label="New Password"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Enter your new password"
+  <UContainer class="flex flex-col items-center justify-center min-h-[calc(100vh-(var(--ui-header-height)*2))] gap-4 p-4">
+    <UPageCard
+      class="w-full max-w-md"
+      highlight
+      highlight-color="secondary"
+    >
+      <UAuthForm
+        ref="resetPasswordForm"
+        :schema="schema"
+        :fields="resetPasswordFields"
+        title="Reset Password"
+        icon="i-lucide-lock"
+        :loading="pending"
+        :disabled="pending"
+        @submit="onSubmit"
+      >
+        <template #validation>
+          <!-- Success alert -->
+          <UAlert
+            v-if="success"
+            color="success"
+            icon="i-lucide-check-circle"
+            title="Password reset successfully!"
+            description="Your password has been updated. You can now sign in with your new password."
+            class="mb-4"
           />
 
-          <FormInput
-            id="confirmPassword"
-            v-model="confirmPassword"
-            label="Confirm New Password"
-            type="password"
-            autocomplete="new-password"
-            placeholder="Confirm your new password"
+          <!-- General error alert -->
+          <UAlert
+            v-else-if="error"
+            color="error"
+            icon="i-lucide-alert-circle"
+            :title="getErrorTitle(error.statusCode)"
+            :description="getErrorMessage(error)"
+            class="mb-4"
           />
+        </template>
 
-          <FormButton
-            type="submit"
-            :disabled="form.isSubmitting.value || !form.isValid.value"
-          >
-            {{ form.isSubmitting.value ? 'Resetting...' : 'Reset Password' }}
-          </FormButton>
-        </Form>
-
-        <p class="reset-password__back">
-          <NuxtLink
+        <template #footer>
+          Remember your password?
+          <ULink
             to="/login"
-            class="reset-password__link"
+            class="text-primary font-medium"
           >
-            Back to Login
-          </NuxtLink>
-        </p>
-      </div>
-    </div>
-  </div>
+            Sign in
+          </ULink>
+        </template>
+      </UAuthForm>
+    </UPageCard>
+  </UContainer>
 </template>
 
 <script setup lang="ts">
+import * as z from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import type { H3Error } from 'h3'
+
+// Define the page metadata
 definePageMeta({
   middleware: 'guest',
+  title: 'Reset Password',
+  description: 'Set your new password',
 })
 
+const toast = useToast()
 const route = useRoute()
 
-// Check if token is provided in query parameters
-const token = computed(() => route.query.token as string || '')
-const hasValidToken = computed(() => !!token.value)
+// Form state
+const pending = ref(false)
+const error = ref<H3Error | null>(null)
+const success = ref(false)
 
-// Success state
-const showSuccessMessage = ref(false)
-const successMessage = ref('')
+// Extract token from URL
+const token = computed(() => route.query.token as string)
 
-// Reset password form (for completing password reset with token)
-const form = useForm({
-  schema: resetPasswordFormSchema,
-  initialValues: {
-    token: route.query.token as string || '',
-    newPassword: '',
-    confirmPassword: '',
-  },
-  onSubmit: async (values) => {
-    try {
-      await $fetch('/api/auth/password/reset', {
-        method: 'POST',
-        body: {
-          token: token.value,
-          newPassword: values.newPassword,
-        },
-      })
-
-      // Show success message
-      showSuccessMessage.value = true
-      successMessage.value = 'Your password has been reset successfully! You can now log in with your new password.'
-
-      // Redirect to login after a short delay
-      setTimeout(() => {
-        navigateTo('/login')
-      }, 3000)
-    }
-    catch (error) {
-      console.error('Password reset failed:', error)
-
-      let errorMessage = 'An unexpected error occurred. Please try again.'
-
-      if (error && typeof error === 'object') {
-        if ('data' in error && error.data && typeof error.data === 'object' && 'message' in error.data) {
-          errorMessage = String(error.data.message)
-        }
-        else if ('message' in error) {
-          errorMessage = String(error.message)
-        }
-      }
-
-      form.setFormError(errorMessage)
-    }
-  },
+// Redirect if no token
+onMounted(() => {
+  if (!token.value) {
+    toast.add({
+      title: 'Invalid reset link',
+      description: 'The password reset link is invalid or expired.',
+      color: 'error',
+      icon: 'i-lucide-alert-circle',
+    })
+    navigateTo('/forgot-password')
+  }
 })
 
-// Use reactive fields that automatically handle blur/touch events
-const newPassword = form.reactiveField('newPassword')
-const confirmPassword = form.reactiveField('confirmPassword')
+// Expose form state to template
+const resetPasswordForm = useTemplateRef('resetPasswordForm')
+
+// Reset password form schema
+const schema = z.object({
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters'),
+  confirmPassword: z
+    .string()
+    .min(1, 'Please confirm your password'),
+}).refine(data => data.password === data.confirmPassword, {
+  message: 'Passwords don\'t match',
+  path: ['confirmPassword'],
+})
+
+type Schema = z.output<typeof schema>
+
+// Define form fields
+const resetPasswordFields = [
+  {
+    name: 'password',
+    type: 'password' as const,
+    label: 'New Password',
+    placeholder: 'Enter your new password',
+    required: true,
+    autocomplete: 'new-password',
+  },
+  {
+    name: 'confirmPassword',
+    type: 'password' as const,
+    label: 'Confirm New Password',
+    placeholder: 'Confirm your new password',
+    required: true,
+    autocomplete: 'new-password',
+  },
+]
+
+// Handle form submission
+async function onSubmit(event: FormSubmitEvent<Schema>) {
+  try {
+    pending.value = true
+    error.value = null
+    success.value = false
+
+    // Get the token from the URL query parameter
+    if (!token.value) {
+      throw new Error('Reset token is missing')
+    }
+
+    // Call reset password API endpoint
+    await $fetch('/api/auth/password/reset', {
+      method: 'POST',
+      body: {
+        token: token.value,
+        newPassword: event.data.password,
+      },
+    })
+
+    // Success state
+    success.value = true
+
+    // Success toast
+    toast.add({
+      title: 'Password reset!',
+      description: 'Your password has been updated successfully.',
+      color: 'success',
+      icon: 'i-lucide-check-circle',
+    })
+
+    // Redirect to login after a short delay
+    setTimeout(() => {
+      navigateTo('/login')
+    }, 3000)
+  }
+  catch (err) {
+    console.error('Reset password error:', err)
+
+    // Set error for display in template
+    if (err && typeof err === 'object' && 'statusCode' in err) {
+      error.value = err as H3Error
+    }
+    else {
+      error.value = { statusCode: 500, message: 'An unexpected error occurred' } as H3Error
+    }
+  }
+  finally {
+    pending.value = false
+  }
+}
+
+// Error message helpers
+function getErrorTitle(statusCode?: number): string {
+  switch (statusCode) {
+    case 400:
+      return 'Invalid input'
+    case 401:
+      return 'Invalid or expired token'
+    case 404:
+      return 'Reset token not found'
+    case 422:
+      return 'Validation error'
+    case 500:
+      return 'Server error'
+    default:
+      return 'Reset failed'
+  }
+}
+
+function getErrorMessage(error: H3Error): string {
+  switch (error.statusCode) {
+    case 400:
+      return 'Please check your input and try again.'
+    case 401:
+      return 'Your reset link is invalid or has expired. Please request a new one.'
+    case 404:
+      return 'Reset token not found. Please request a new password reset.'
+    case 422:
+      return 'Please check your password and try again.'
+    case 500:
+      return 'Something went wrong on our end. Please try again.'
+    default:
+      return 'An unexpected error occurred. Please try again.'
+  }
+}
 </script>
-
-<style scoped>
-.reset-password__back {
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.875rem;
-  color: var(--secondary-text-color);
-}
-
-.reset-password__link {
-  color: var(--nnt-purple);
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.reset-password__link:hover {
-  text-decoration: underline;
-}
-
-.reset-password-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 50vh;
-  padding: 1.5rem;
-}
-
-.reset-password {
-  width: 100%;
-  max-width: 400px;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: var(--nnt-orange) solid 2px;
-}
-
-.reset-password__title {
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: var(--primary-text-color);
-  font-weight: 600;
-}
-
-.reset-password__content {
-  width: 100%;
-}
-
-.reset-password__description {
-  margin-bottom: 1.5rem;
-  color: var(--secondary-text-color);
-  text-align: center;
-  font-size: 0.875rem;
-  line-height: 1.5;
-}
-</style>

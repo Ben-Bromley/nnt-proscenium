@@ -1,11 +1,12 @@
 import type { RoleType } from '@prisma/client'
+import type { H3Error } from 'h3'
 
-export interface LoginCredentials {
+interface LoginCredentials {
   email: string
   password: string
 }
 
-export interface RegisterCredentials {
+interface RegisterCredentials {
   email: string
   password: string
   name?: string
@@ -17,35 +18,111 @@ export const useAuth = () => {
   const user = computed(() => session.value?.user)
   const isLoggedIn = computed(() => !!user.value)
 
+  // Reactive state for pending and error
+  const pending = ref(false)
+  const error = ref<H3Error | null>(null)
+
   const login = async (credentials: LoginCredentials) => {
-    const response = await $fetch('/api/auth/login', {
-      method: 'POST',
-      body: credentials,
-    })
+    try {
+      pending.value = true
+      error.value = null
 
-    console.log('Login response:', response)
+      const response = await $fetch('/api/auth/login', {
+        method: 'POST',
+        body: credentials,
+      })
 
-    await refreshSession()
-    return response.data!.user
+      console.log('Login response:', response)
+
+      await refreshSession()
+      return response.data!.user
+    }
+    catch (err: unknown) {
+      // Handle H3Error responses
+      if (err && typeof err === 'object' && 'statusCode' in err) {
+        error.value = err as H3Error
+      }
+      else {
+        // Handle network or other errors
+        error.value = {
+          statusCode: 500,
+          statusMessage: 'Network Error',
+          data: { message: 'Failed to connect to server' },
+        } as H3Error
+      }
+
+      throw err
+    }
+    finally {
+      pending.value = false
+    }
   }
 
   const register = async (credentials: RegisterCredentials) => {
-    const result = await $fetch('/api/auth/register', {
-      method: 'POST',
-      body: credentials,
-    })
+    try {
+      pending.value = true
+      error.value = null
 
-    // Note: Don't refresh session here since user needs to verify email first
-    return result
+      const result = await $fetch('/api/auth/register', {
+        method: 'POST',
+        body: credentials,
+      })
+
+      // Note: Don't refresh session here since user needs to verify email first
+      return result
+    }
+    catch (err: unknown) {
+      // Handle H3Error responses
+      if (err && typeof err === 'object' && 'statusCode' in err) {
+        error.value = err as H3Error
+      }
+      else {
+        // Handle network or other errors
+        error.value = {
+          statusCode: 500,
+          statusMessage: 'Network Error',
+          data: { message: 'Failed to connect to server' },
+        } as H3Error
+      }
+
+      throw err
+    }
+    finally {
+      pending.value = false
+    }
   }
 
   const logout = async () => {
-    await $fetch('/api/auth/logout', {
-      method: 'POST',
-    })
+    try {
+      pending.value = true
+      error.value = null
 
-    await refreshSession()
-    await navigateTo('/login')
+      await $fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+
+      await refreshSession()
+      await navigateTo('/login')
+    }
+    catch (err: unknown) {
+      // Handle H3Error responses
+      if (err && typeof err === 'object' && 'statusCode' in err) {
+        error.value = err as H3Error
+      }
+      else {
+        // Handle network or other errors
+        error.value = {
+          statusCode: 500,
+          statusMessage: 'Network Error',
+          data: { message: 'Failed to connect to server' },
+        } as H3Error
+      }
+
+      throw err
+    }
+    finally {
+      pending.value = false
+    }
   }
 
   const hasRole = (role: RoleType): boolean => {
@@ -63,15 +140,22 @@ export const useAuth = () => {
     return roles.every(role => user.value?.roles.includes(role))
   }
 
+  const clearError = () => {
+    error.value = null
+  }
+
   return {
     user: readonly(user),
     isLoggedIn: readonly(isLoggedIn),
+    pending: readonly(pending),
+    error: readonly(error),
     login,
     register,
     logout,
     hasRole,
     hasAnyRole,
     hasAllRoles,
+    clearError,
     refresh: refreshSession,
   }
 }
