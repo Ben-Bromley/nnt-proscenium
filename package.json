@@ -29,5 +29,8 @@
   },
   "prisma": {
     "schema": "./prisma"
+  },
+  "overrides": {
+    "vite": "npm:rolldown-vite@latest"
   }
 }
