@@ -88,8 +88,7 @@
             About Us
           </h2>
           <p>
-            We are The Nottingham New Theatre, a student-run theatre and part of the University of Nottingham Student's Union.
-            Students join us from all courses and disciplines, whether you want to act, direct, or work backstage.
+            We are The Nottingham New Theatre, a student-run theatre. As part of the University of Nottingham Student’s Union (UoNSU) we have a membership of over 200 students every year. Students join us from a variety of courses and disciplines; from English to Engineering, undergraduate and postgraduate. Whether you’re keen to act, direct, work backstage or just watch an amazing show, there’s a place for you here!
           </p>
         </div>
 
