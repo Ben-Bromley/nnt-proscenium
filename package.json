@@ -21,6 +21,7 @@
     "@prisma/adapter-d1": "^6.15.0",
     "@prisma/nuxt": "0.3.0",
     "eslint": "^9.35.0",
+    "ical.js": "^2.2.1",
     "nuxt": "^4.1.1",
     "nuxt-auth-utils": "0.5.23",
     "prisma": "^6.15.0",
