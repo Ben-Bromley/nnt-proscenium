@@ -39,7 +39,7 @@
         <!-- Skeleton Grid - mimicking UBlogPosts layout -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <!-- Skeleton Card 1 -->
-          <div class="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+          <div class="border rounded-lg overflow-hidden">
             <USkeleton class="h-48 w-full" />
             <div class="p-4">
               <USkeleton class="h-6 w-3/4 mb-2" />
@@ -50,7 +50,7 @@
           </div>
 
           <!-- Skeleton Card 2 -->
-          <div class="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+          <div class="border rounded-lg overflow-hidden">
             <USkeleton class="h-48 w-full" />
             <div class="p-4">
               <USkeleton class="h-6 w-2/3 mb-2" />
@@ -61,7 +61,7 @@
           </div>
 
           <!-- Skeleton Card 3 -->
-          <div class="border border-gray-200 dark:border-gray-800 rounded-lg overflow-hidden">
+          <div class="border rounded-lg overflow-hidden">
             <USkeleton class="h-48 w-full" />
             <div class="p-4">
               <USkeleton class="h-6 w-5/6 mb-2" />
@@ -98,7 +98,7 @@
               Inclusive Community
             </h3>
             <p>
-              Welcome students from all backgrounds. No experience required!
+              Students from all backgrounds welcome. No experience required!
             </p>
           </UCard>
 
