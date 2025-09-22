@@ -13,11 +13,10 @@
 
 <script lang="ts" setup>
 // Fetch content from Nuxt Content
-const page = await queryCollection('pages').path('/pages/about').first()
+const page = await queryCollection('pages').path('/pages/festival').first()
 
 definePageMeta({
   layout: false,
-  title: 'About Us',
-  description: 'All about the University of Nottingham\'s student-run theatre. Based in Portland Studio opposite Mooch, we produce over 30 plays per year.',
+  title: 'StuFF - Student Fringe Festival',
 })
 </script>

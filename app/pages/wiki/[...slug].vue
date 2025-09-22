@@ -4,7 +4,14 @@
       <UPageHeader
         :title="page.title"
         :description="page.description"
-      />
+      >
+        <br>
+        <UAlert
+          color="warning"
+          title="Under Construction"
+          description="This section is currently being developed. Some pages may be missing content or not yet available. Please check back later for updates."
+        />
+      </UPageHeader>
 
       <UPageBody>
         <ContentRenderer
