@@ -293,11 +293,11 @@
               </p>
               <UButton
                 to="/get-involved/creatives"
-                color="purple"
+                color="tertiary"
                 variant="outline"
                 block
               >
-                Join Improv Group
+                Join Creatives
               </UButton>
             </div>
           </UCard>
@@ -314,7 +314,7 @@
                 </div>
                 <div class="flex-1">
                   <h3 class="text-xl font-semibold mb-1">
-                    Stagecraft Workshop
+                    Stagecraft
                   </h3>
                   <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
                     <UIcon
@@ -331,11 +331,11 @@
               </p>
               <UButton
                 to="/get-involved/stagecraft"
-                color="blue"
+                color="tertiary"
                 variant="outline"
                 block
               >
-                Join Stagecraft Workshop
+                Join Stagecraft
               </UButton>
             </div>
           </UCard>
