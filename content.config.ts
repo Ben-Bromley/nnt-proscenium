@@ -65,5 +65,9 @@ export default defineContentConfig({
         learning_outcomes: z.array(z.string()).optional(),
       }),
     }),
+    pages: defineCollection({
+      type: 'page',
+      source: 'pages/**',
+    }),
   },
 })
