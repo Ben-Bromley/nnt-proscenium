@@ -132,10 +132,11 @@
                 Technical
               </h3>
               <p class="text-gray-500 dark:text-gray-400 mb-4">
-                Lighting, sound, video design, rigging, and technical direction for our shows.
+                Lighting, sound, video design, rigging, and technical direction.
+                Join our Wednesday stagecraft workshop from 4-5pm.
               </p>
               <UButton
-                to="/wiki/technical"
+                to="/get-involved/stagecraft"
                 variant="outline"
                 size="sm"
                 block
@@ -150,18 +151,19 @@
             <div class="text-center">
               <div class="mx-auto mb-4 w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                 <UIcon
-                  name="i-lucide-palette"
+                  name="i-lucide-theater"
                   class="w-6 h-6 text-primary"
                 />
               </div>
               <h3 class="text-xl font-semibold mb-2">
-                Creative
+                Improv & Performance
               </h3>
               <p class="text-gray-500 dark:text-gray-400 mb-4">
-                Set design, costume, props, make-up, marketing, and publicity roles.
+                Improvisation, character work, and spontaneous performance.
+                Join our Wednesday improv group from 2-4pm.
               </p>
               <UButton
-                to="/wiki/productions"
+                to="/get-involved/creatives"
                 variant="outline"
                 size="sm"
                 block
@@ -248,6 +250,111 @@
               </UButton>
             </div>
           </UCard>
+        </div>
+      </div>
+
+      <!-- Weekly Workshops -->
+      <div class="mb-16">
+        <h2 class="text-3xl font-bold mb-4">
+          Weekly Workshops
+        </h2>
+        <p class="text-lg text-gray-600 dark:text-gray-300 mb-8">
+          Join our regular Wednesday workshops to develop your skills and work on current productions.
+          Perfect for beginners and experienced members alike.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <!-- Creatives Workshop -->
+          <UCard class="border border-primary/20">
+            <div class="p-6">
+              <div class="flex items-start gap-4 mb-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
+                  <UIcon
+                    name="i-lucide-theater"
+                    class="w-6 h-6 text-purple-600 dark:text-purple-400"
+                  />
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold mb-1">
+                    Creatives Improv
+                  </h3>
+                  <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <UIcon
+                      name="i-lucide-clock"
+                      class="w-4 h-4"
+                    />
+                    <span>Wednesdays, 2:00 PM - 4:00 PM</span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Join our weekly improv group and develop spontaneous performance skills, confidence,
+                and creativity through improvised theatre.
+              </p>
+              <UButton
+                to="/get-involved/creatives"
+                color="purple"
+                variant="outline"
+                block
+              >
+                Join Improv Group
+              </UButton>
+            </div>
+          </UCard>
+
+          <!-- Stagecraft Workshop -->
+          <UCard class="border border-primary/20">
+            <div class="p-6">
+              <div class="flex items-start gap-4 mb-4">
+                <div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/20 flex-shrink-0">
+                  <UIcon
+                    name="i-lucide-settings"
+                    class="w-6 h-6 text-blue-600 dark:text-blue-400"
+                  />
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-semibold mb-1">
+                    Stagecraft Workshop
+                  </h3>
+                  <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
+                    <UIcon
+                      name="i-lucide-clock"
+                      class="w-4 h-4"
+                    />
+                    <span>Wednesdays, 4:00 PM - 5:00 PM</span>
+                  </div>
+                </div>
+              </div>
+              <p class="text-gray-600 dark:text-gray-300 mb-4">
+                Master lighting, sound, rigging, and technical direction. Ideal for engineering students
+                and those fascinated by how technical magic happens.
+              </p>
+              <UButton
+                to="/get-involved/stagecraft"
+                color="blue"
+                variant="outline"
+                block
+              >
+                Join Stagecraft Workshop
+              </UButton>
+            </div>
+          </UCard>
+        </div>
+
+        <div class="mt-8 text-center">
+          <UAlert
+            color="blue"
+            variant="soft"
+            class="max-w-2xl mx-auto"
+          >
+            <template #title>
+              No Experience Necessary!
+            </template>
+            <template #description>
+              Both workshops welcome complete beginners. We provide all materials and training,
+              so just turn up and start learning with experienced members guiding you.
+            </template>
+          </UAlert>
         </div>
       </div>
 

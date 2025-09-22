@@ -330,7 +330,7 @@ const viewEventDetails = (event) => {
   showEventModal.value = true
 }
 
-const addToCalendar = (event) => {
+const addToCalendar = (_event) => {
   toast.add({
     title: 'Add to Calendar',
     description: `This feature is coming soon!`,
