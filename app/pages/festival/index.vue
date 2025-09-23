@@ -1,13 +1,18 @@
 <template>
   <div>
     <!-- Background image positioning for hero -->
-    <div class="relative w-full">
+    <UPageHero
+      :title="page?.title"
+      :subtitle="page?.description"
+      class="mb-8"
+    />
+    <UContainer>
       <ContentRenderer
         v-if="page?.body"
         :value="page"
         class="prose-none"
       />
-    </div>
+    </UContainer>
   </div>
 </template>
 

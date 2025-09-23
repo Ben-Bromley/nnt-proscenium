@@ -3,15 +3,6 @@ title: "About Us"
 description: "All about the University of Nottingham's student-run theatre. Based in Portland Studio opposite Mooch, we produce over 30 plays per year."
 ---
 
-::u-page-hero
----
-title: "All about the University of Nottingham's student-run theatre"
-description: "England's only fully student-run theatre"
----
-::
-
-::u-container
-
 ## About The Nottingham New Theatre
 
 Based on University Park, Nottingham, we are the only student run theatre in England. We produce over 30 plays per year, across two venues (an 80-seat Auditorium and 30-seat Studio); send shows to the [National Student Drama Festival](https://www.nsdf.org.uk/) and [Edinburgh Festival Fringe](http://edfringe.com/); and even host our own Student Fringe Festival every June.
@@ -22,7 +13,13 @@ The Nottingham New theatre is undergoing a modernisation program to upgrade our 
 
 ## Our Location
 
-**Please note:** We are currently not located in the theatre building. You can find us at **Portland Studio**, located opposite Mooch on University Park campus.
+::u-alert
+---
+color: "info"
+title: "Important Notice"
+description: "We are currently not located in the theatre building. You can find us in the Portland Studio, located opposite Mooch on University Park campus."
+---
+::
 
 We're easily accessible both by car and public transport. If you're driving you should enter University Park via the south entrance, and park in the Trent Building car park. From the car park walk up the steps at the back and a short way up the hill you'll find Portland Studio on the left. The visitors' car park operates parking charges from 8:30am-4:15pm Monday-Friday, so is free for the majority of our events.
 
@@ -100,7 +97,7 @@ More recently, our two Studio spaces were built in 2013 and our newest season â€
 
 Read more about our past on the [History Site](http://history.newtheatre.org.uk/).
 
-::u-page-cta
+::u-page-c-t-a
 ---
 title: "Ready to Join Our Theatre Family?"
 description: "Whether you're looking to step into the spotlight or work behind the scenes, we'd love to have you as part of our community."
@@ -116,6 +113,4 @@ links:
     external: true
 class: "mt-20"
 ---
-::
-
 ::

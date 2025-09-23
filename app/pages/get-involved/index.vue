@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO: Convert to markdown and add information about proposing shows -->
   <div>
     <!-- Hero Section -->
     <UPageHero
@@ -341,17 +342,16 @@
           </UCard>
         </div>
 
-        <div class="mt-8 text-center">
+        <div class="mt-8">
           <UAlert
-            color="blue"
+            color="tertiary"
             variant="soft"
-            class="max-w-2xl mx-auto"
           >
             <template #title>
               No Experience Necessary!
             </template>
             <template #description>
-              Both workshops welcome complete beginners. We provide all materials and training,
+              Both workshops welcome complete beginners. We provide everything,
               so just turn up and start learning with experienced members guiding you.
             </template>
           </UAlert>
@@ -382,6 +382,7 @@
 
         <UAlert
           color="info"
+          variant="soft"
           class="mb-8"
           title="Coming Soon!"
           description="More detailed guides and resources on getting involved will be available here soon."

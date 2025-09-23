@@ -8,6 +8,7 @@
         <br>
         <UAlert
           color="warning"
+          variant="soft"
           title="Under Construction"
           description="This section is currently being developed. Some pages may be missing content or not yet available. Please check back later for updates."
         />

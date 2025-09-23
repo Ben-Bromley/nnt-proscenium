@@ -106,7 +106,7 @@ const links: NavigationMenuItem[] = [
   },
   {
     label: 'Branding',
-    to: '/branding',
+    to: '/wiki/governance/brand',
   },
   {
     label: 'Mailing List',

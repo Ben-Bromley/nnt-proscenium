@@ -2,7 +2,7 @@
   <div class="brand-logo">
     <NuxtImg
       class="brand-logo__full"
-      src="/images/logos/nnt_logo-dark.png"
+      src="/images/logos/nnt_anniversary_logo-dark.png"
       alt="Logo"
     />
     <NuxtImg

@@ -68,6 +68,10 @@ export default defineContentConfig({
     pages: defineCollection({
       type: 'page',
       source: 'pages/**',
+      schema: z.object({
+        heroImage: z.string().optional(),
+        heroImageAlt: z.string().optional(),
+      }),
     }),
   },
 })
