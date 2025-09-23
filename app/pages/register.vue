@@ -11,10 +11,20 @@
         :fields="registerFields"
         title="Create Account"
         icon="i-lucide-user-plus"
-        :loading="pending"
-        :disabled="pending"
+        :loading="true || pending"
+        :disabled="true || pending"
         @submit="onSubmit"
       >
+        <template #description>
+          <UAlert
+            color="warning"
+            variant="soft"
+            title="Registration is currently disabled"
+            description="You can still visit the SU website to purchase a membership."
+            class="mb-4 text-left"
+          />
+        </template>
+
         <template #validation>
           <!-- Success alert -->
           <UAlert
