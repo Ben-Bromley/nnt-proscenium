@@ -66,6 +66,10 @@ export default defineNuxtConfig({
             pattern: 'proscenium.newtheatre.org.uk',
             custom_domain: true,
           },
+          {
+            pattern: 'newtheatre.org.uk',
+            custom_domain: true,
+          },
         ],
         d1_databases: [
           {
