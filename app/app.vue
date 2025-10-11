@@ -24,15 +24,27 @@
       ]"
     />
 
-    <AppHeader />
+    <!-- TODO: Replace this approach. it's really hacky and I hate it -->
 
-    <UMain>
+    <template v-if="isDashboardLayout">
+      <!-- Dashboard layout handles its own structure -->
       <NuxtLayout>
         <NuxtPage />
       </NuxtLayout>
-    </UMain>
+    </template>
 
-    <AppFooter />
+    <template v-else>
+      <!-- Standard layout with header/main/footer -->
+      <AppHeader />
+
+      <UMain>
+        <NuxtLayout>
+          <NuxtPage />
+        </NuxtLayout>
+      </UMain>
+
+      <AppFooter />
+    </template>
   </UApp>
 </template>
 
@@ -43,6 +55,13 @@ useHead({
 
 const colorMode = useColorMode()
 colorMode.preference = 'dark'
+
+// Check if current page uses admin layout (dashboard)
+const route = useRoute()
+const isDashboardLayout = computed(() => {
+  // Check if the page meta specifies admin layout
+  return route.meta.layout === 'admin'
+})
 
 // Setup banner logic
 const { user } = useUserSession()
@@ -56,6 +75,9 @@ const showSetupBanner = computed(() => {
 
   // Don't show if user has already completed setup
   if (user.value.setupCompleted) return false
+
+  // Don't show on admin pages to avoid layout conflicts
+  if (isDashboardLayout.value) return false
 
   return true
 })
