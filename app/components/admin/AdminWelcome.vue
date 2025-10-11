@@ -1,56 +1,43 @@
 <template>
-  <div class="admin-welcome">
-    <h2 class="admin-welcome__title">
-      Welcome, {{ user?.profile?.name || user?.email }}!
-    </h2>
-    <p class="admin-welcome__subtitle">
-      You have admin access. Your roles: {{ user?.roles.join(', ') }}
-    </p>
-  </div>
+  <UCard
+    variant="soft"
+    class="mb-8"
+  >
+    <template #header>
+      <div class="flex items-center gap-3">
+        <UIcon
+          name="i-heroicons-user-circle"
+          class="size-8 text-primary"
+        />
+        <div>
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+            Welcome, {{ user?.profile?.name || user?.email }}!
+          </h2>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Admin Dashboard Access
+          </p>
+        </div>
+      </div>
+    </template>
+
+    <div class="flex items-center gap-2">
+      <UBadge
+        v-for="(role, index) in user?.roles"
+        :key="index"
+        variant="subtle"
+      >
+        {{ role }}
+      </UBadge>
+    </div>
+  </UCard>
 </template>
 
 <script setup lang="ts">
+import type { User } from '#auth-utils'
+
 interface Props {
-  user: AuthUser | undefined
+  user: User | undefined
 }
 
 defineProps<Props>()
 </script>
-
-<style scoped>
-.admin-welcome {
-  background-color: var(--secondary-bg-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  padding: var(--spacing-xl);
-  margin-bottom: var(--spacing-xl);
-}
-
-.admin-welcome__title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--primary-text-color);
-  margin-bottom: var(--spacing-sm);
-}
-
-.admin-welcome__subtitle {
-  color: var(--secondary-text-color);
-  font-size: 1rem;
-  margin: 0;
-}
-
-/* Mobile responsiveness */
-@media (max-width: 480px) {
-  .admin-welcome {
-    padding: var(--spacing-lg);
-  }
-
-  .admin-welcome__title {
-    font-size: 1.25rem;
-  }
-
-  .admin-welcome__subtitle {
-    font-size: 0.9rem;
-  }
-}
-</style>

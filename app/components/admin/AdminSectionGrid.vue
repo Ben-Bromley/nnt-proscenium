@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-section-grid">
+  <UPageGrid>
     <AdminCard
       v-for="section in sections"
       :key="section.path"
@@ -8,7 +8,7 @@
       :path="section.path"
       :icon="section.icon"
     />
-  </div>
+  </UPageGrid>
 </template>
 
 <script setup lang="ts">
@@ -25,20 +25,3 @@ interface Props {
 
 defineProps<Props>()
 </script>
-
-<style scoped>
-.admin-section-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--spacing-lg);
-  margin-top: var(--spacing-xl);
-}
-
-/* Mobile responsiveness */
-@media (max-width: 768px) {
-  .admin-section-grid {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-  }
-}
-</style>
