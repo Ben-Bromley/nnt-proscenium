@@ -31,16 +31,32 @@
       default-sort-order="desc"
       :default-per-page="10"
       enable-selection
-    />
+    >
+      <template #actions="{ row }">
+        <div class="flex gap-2">
+          <UButton
+            icon="i-lucide-eye"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="View feature"
+            @click="navigateTo(`/admin/venues/features/${row.original.id}`)"
+          />
+          <UButton
+            icon="i-lucide-edit"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="Edit feature"
+            @click="navigateTo(`/admin/venues/features/${row.original.id}/edit`)"
+          />
+        </div>
+      </template>
+    </DataTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineComponent, h } from 'vue'
-import type { Column, Filter } from '~/components/table/types'
-import { CommonRenderers } from '~/components/table/types'
-import TableActions from '~/components/table/TableActions.vue'
-
 // Require admin access
 definePageMeta({
   middleware: 'admin',
@@ -49,7 +65,7 @@ definePageMeta({
 })
 
 // Define columns for the venue features table
-const columns: Column[] = [
+const columns = [
   {
     key: 'name',
     label: 'Name',
@@ -59,7 +75,7 @@ const columns: Column[] = [
     key: 'description',
     label: 'Description',
     sortable: false,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return String(value || 'No description provided')
     },
   },
@@ -67,7 +83,7 @@ const columns: Column[] = [
     key: 'icon',
     label: 'Icon',
     sortable: false,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return String(value || 'No icon')
     },
   },
@@ -75,9 +91,9 @@ const columns: Column[] = [
     key: '_count',
     label: 'Used by Venues',
     sortable: false,
-    render: (value): string => {
+    render: (value: unknown): string => {
       if (!value || typeof value !== 'object' || !('venues' in value)) return 'No venues'
-      const count = value.venues as number
+      const count = (value as { venues: number }).venues
       return count === 0 ? 'No venues' : `${count} venue${count === 1 ? '' : 's'}`
     },
   },
@@ -85,7 +101,7 @@ const columns: Column[] = [
     key: 'isActive',
     label: 'Status',
     sortable: true,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return value ? 'Active' : 'Inactive'
     },
   },
@@ -93,55 +109,25 @@ const columns: Column[] = [
     key: 'createdAt',
     label: 'Created',
     sortable: true,
-    render: CommonRenderers.date,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      const date = new Date(value as string)
+      return date.toLocaleDateString()
+    },
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    component: defineComponent({
-      props: {
-        row: {
-          type: Object,
-          required: true,
-        },
-        value: {
-          type: null,
-          required: false,
-        },
-      },
-      setup(props) {
-        const featureActions = [
-          {
-            key: 'view',
-            label: 'View',
-            variant: 'primary' as const,
-            path: '/admin/venues/features/{id}',
-          },
-          {
-            key: 'edit',
-            label: 'Edit',
-            variant: 'secondary' as const,
-            path: '/admin/venues/features/{id}/edit',
-          },
-        ]
-
-        return () => h(TableActions, {
-          row: props.row,
-          value: props.value,
-          actions: featureActions,
-        })
-      },
-    }),
   },
 ]
 
 // Define filters for the venue features table
-const filters: Filter[] = [
+const filters = [
   {
     key: 'isActive',
     label: 'Status',
-    type: 'select',
+    type: 'select' as const,
     options: [
       { value: 'true', label: 'Active' },
       { value: 'false', label: 'Inactive' },

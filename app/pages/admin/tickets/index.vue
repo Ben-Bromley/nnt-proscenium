@@ -25,15 +25,32 @@
       default-sort-order="asc"
       :default-per-page="25"
       enable-selection
-    />
+    >
+      <template #actions="{ row }">
+        <div class="flex gap-2">
+          <UButton
+            icon="i-lucide-eye"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="View ticket type"
+            @click="navigateTo(`/admin/tickets/${row.original.id}`)"
+          />
+          <UButton
+            icon="i-lucide-edit"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="Edit ticket type"
+            @click="navigateTo(`/admin/tickets/${row.original.id}/edit`)"
+          />
+        </div>
+      </template>
+    </DataTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Column, Filter } from '~/components/table/types'
-import { CommonRenderers } from '~/components/table/types'
-import TableActions from '~/components/table/TableActions.vue'
-
 // Require admin access
 definePageMeta({
   middleware: 'admin',
@@ -42,7 +59,7 @@ definePageMeta({
 })
 
 // Define columns for the ticket types table
-const columns: Column[] = [
+const columns = [
   {
     key: 'name',
     label: 'Name',
@@ -52,7 +69,7 @@ const columns: Column[] = [
     key: 'description',
     label: 'Description',
     sortable: false,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return value ? String(value) : 'No description'
     },
   },
@@ -60,7 +77,7 @@ const columns: Column[] = [
     key: 'defaultPrice',
     label: 'Default Price',
     sortable: true,
-    render: (value): string => {
+    render: (value: unknown): string => {
       const price = Number(value)
       return new Intl.NumberFormat('en-GB', {
         style: 'currency',
@@ -72,7 +89,7 @@ const columns: Column[] = [
     key: 'sortOrder',
     label: 'Sort Order',
     sortable: true,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return value !== null && value !== undefined ? String(value) : 'Auto'
     },
   },
@@ -80,7 +97,7 @@ const columns: Column[] = [
     key: 'isActive',
     label: 'Status',
     sortable: true,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return value ? 'Active' : 'Inactive'
     },
   },
@@ -88,69 +105,29 @@ const columns: Column[] = [
     key: 'createdAt',
     label: 'Created',
     sortable: true,
-    render: CommonRenderers.date,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      const date = new Date(value as string)
+      return date.toLocaleDateString()
+    },
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    component: defineComponent({
-      props: {
-        row: {
-          type: Object,
-          required: true,
-        },
-        value: {
-          type: null,
-          required: false,
-        },
-      },
-      setup(props) {
-        const ticketTypeActions = [
-          {
-            key: 'view',
-            label: 'View',
-            variant: 'primary' as const,
-            path: '/admin/tickets/{id}',
-          },
-          {
-            key: 'edit',
-            label: 'Edit',
-            variant: 'secondary' as const,
-            path: '/admin/tickets/{id}/edit',
-          },
-        ]
-
-        return () => h(TableActions, {
-          row: props.row,
-          value: props.value,
-          actions: ticketTypeActions,
-        })
-      },
-    }),
   },
 ]
 
 // Define filters for the ticket types table
-const filters: Filter[] = [
+const filters = [
   {
     key: 'isActive',
     label: 'Status',
-    type: 'select',
+    type: 'select' as const,
     options: [
       { value: 'true', label: 'Active' },
       { value: 'false', label: 'Inactive' },
     ],
-  },
-  {
-    key: 'minPrice',
-    label: 'Min Price (£)',
-    type: 'number',
-  },
-  {
-    key: 'maxPrice',
-    label: 'Max Price (£)',
-    type: 'number',
   },
 ]
 </script>

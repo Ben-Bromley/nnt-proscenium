@@ -25,15 +25,32 @@
       default-sort-order="desc"
       :default-per-page="20"
       enable-selection
-    />
+    >
+      <template #actions="{ row }">
+        <div class="flex gap-2">
+          <UButton
+            icon="i-lucide-eye"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="View content warning"
+            @click="navigateTo(`/admin/content-warnings/${row.original.id}`)"
+          />
+          <UButton
+            icon="i-lucide-edit"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="Edit content warning"
+            @click="navigateTo(`/admin/content-warnings/${row.original.id}/edit`)"
+          />
+        </div>
+      </template>
+    </DataTable>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { Column, Filter } from '~/components/table/types'
-import { CommonRenderers } from '~/components/table/types'
-import TableActions from '~/components/table/TableActions.vue'
-
 // Require admin access
 definePageMeta({
   middleware: 'admin',
@@ -42,7 +59,7 @@ definePageMeta({
 })
 
 // Define columns for the content warnings table
-const columns: Column[] = [
+const columns = [
   {
     key: 'name',
     label: 'Name',
@@ -52,7 +69,7 @@ const columns: Column[] = [
     key: 'description',
     label: 'Description',
     sortable: false,
-    render: (value): string => {
+    render: (value: unknown): string => {
       if (!value) return 'No description'
       return String(value).length > 100
         ? String(value).substring(0, 100) + '...'
@@ -63,7 +80,7 @@ const columns: Column[] = [
     key: '_count',
     label: 'Shows Using',
     sortable: true,
-    render: (value): string => {
+    render: (value: unknown): string => {
       const count = (value as { shows?: number })?.shows || 0
       return count === 1 ? '1 show' : `${count} shows`
     },
@@ -72,7 +89,7 @@ const columns: Column[] = [
     key: 'isActive',
     label: 'Status',
     sortable: true,
-    render: (value): string => {
+    render: (value: unknown): string => {
       return value ? 'Active' : 'Inactive'
     },
   },
@@ -80,61 +97,35 @@ const columns: Column[] = [
     key: 'createdAt',
     label: 'Created',
     sortable: true,
-    render: CommonRenderers.date,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      const date = new Date(value as string)
+      return date.toLocaleDateString()
+    },
   },
   {
     key: 'updatedAt',
     label: 'Updated',
     sortable: true,
-    render: CommonRenderers.date,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      const date = new Date(value as string)
+      return date.toLocaleDateString()
+    },
   },
   {
     key: 'actions',
     label: 'Actions',
     sortable: false,
-    component: defineComponent({
-      props: {
-        row: {
-          type: Object,
-          required: true,
-        },
-        value: {
-          type: null,
-          required: false,
-        },
-      },
-      setup(props) {
-        const contentWarningActions = [
-          {
-            key: 'view',
-            label: 'View',
-            variant: 'primary' as const,
-            path: '/admin/content-warnings/{id}',
-          },
-          {
-            key: 'edit',
-            label: 'Edit',
-            variant: 'secondary' as const,
-            path: '/admin/content-warnings/{id}/edit',
-          },
-        ]
-
-        return () => h(TableActions, {
-          row: props.row,
-          value: props.value,
-          actions: contentWarningActions,
-        })
-      },
-    }),
   },
 ]
 
 // Define filters for the content warnings table
-const filters: Filter[] = [
+const filters = [
   {
     key: 'isActive',
     label: 'Status',
-    type: 'select',
+    type: 'select' as const,
     options: [
       { value: 'true', label: 'Active' },
       { value: 'false', label: 'Inactive' },
@@ -143,7 +134,7 @@ const filters: Filter[] = [
   {
     key: 'hasShows',
     label: 'Usage',
-    type: 'select',
+    type: 'select' as const,
     options: [
       { value: 'true', label: 'Used by shows' },
       { value: 'false', label: 'Not used' },
