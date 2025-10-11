@@ -91,7 +91,6 @@
 
     <!-- Pagination -->
     <div
-      v-if="totalPages > 1"
       class="flex items-center justify-between gap-3 px-4 py-3 border-t border-default"
     >
       <div class="text-sm text-muted">
@@ -104,7 +103,7 @@
         :model-value="currentPage"
         :items-per-page="perPage"
         :total="totalRows"
-        @update:model-value="handlePageChange"
+        @update:page="handlePageChange"
       />
     </div>
   </div>
@@ -120,6 +119,7 @@ interface Column<TData = Record<string, unknown>> {
   label?: string
   sortable?: boolean
   class?: string
+  maxWidth?: string
   render?: (value: unknown, row: TData) => string | number | boolean
 }
 
@@ -227,14 +227,18 @@ const tableColumns = computed((): ColumnDef<T>[] => {
       id: col.key,
       header: col.label || col.key,
       enableSorting: col.sortable ?? false,
-      meta: col.class
-        ? {
-            class: {
-              th: col.class,
-              td: col.class,
-            },
-          }
-        : undefined,
+      meta: {
+        class: {
+          th: col.class,
+          td: col.class,
+        },
+        style: col.maxWidth
+          ? {
+              th: `max-width: ${col.maxWidth}`,
+              td: `max-width: ${col.maxWidth}`,
+            }
+          : undefined,
+      },
     }
 
     // Add custom cell renderer if provided
