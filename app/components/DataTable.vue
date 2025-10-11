@@ -1,63 +1,127 @@
 <template>
   <div class="data-table">
-    <!-- Search and Filters -->
-    <div class="table-controls">
-      <div class="table-controls__top">
-        <TableSearch
+    <!-- Search, Filters, and Bulk Actions -->
+    <div
+      v-if="showSearch || showFilters || $slots['bulk-actions']"
+      class="flex items-center justify-between gap-3 py-3 border-b border-default"
+    >
+      <div class="flex items-center gap-3">
+        <UInput
+          v-if="showSearch"
           v-model="searchQuery"
           :placeholder="searchPlaceholder"
-          @search="handleSearch"
+          icon="i-lucide-search"
+          class="w-64"
         />
 
-        <TableFilters
-          v-if="filters.length > 0"
-          :filters="filters"
-          :values="filterValues"
-          @update="handleFiltersUpdate"
-          @clear="handleFiltersClear"
+        <!-- Clear filters button -->
+        <UButton
+          v-if="showFilters && hasActiveFilters"
+          icon="i-lucide-x"
+          color="neutral"
+          variant="ghost"
+          aria-label="Clear filters"
+          @click="handleFiltersClear"
         />
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Bulk actions slot -->
+        <div
+          v-if="$slots['bulk-actions'] && hasSelectedRows"
+          class="flex items-center gap-2"
+        >
+          <slot
+            name="bulk-actions"
+            :selected-rows="selectedRows"
+            :clear-selection="clearSelection"
+          />
+        </div>
+
+        <!-- Filter Dropdowns -->
+        <template v-if="showFilters && filters.length > 0">
+          <USelect
+            v-for="filter in filters"
+            :key="filter.key"
+            v-model="filterValues[filter.key]"
+            :items="filter.options || []"
+            :placeholder="filter.label"
+            class="w-40"
+          />
+        </template>
       </div>
     </div>
 
     <!-- Table -->
-    <div class="table-container">
-      <table class="table">
-        <TableHeader
-          :columns="computedColumns"
-          :sort-by="sortBy"
-          :sort-order="sortOrder"
-          :enable-selection="enableSelection"
-          :select-all="selectAll"
-          @sort="handleSort"
-          @toggle-select-all="toggleSelectAll"
+    <UTable
+      ref="tableRef"
+      v-model:row-selection="rowSelectionState"
+      :data="(data as T[])"
+      :columns="tableColumns"
+      :loading="loading"
+      :empty="emptyMessage"
+      :ui="{
+        base: 'table-fixed border-separate border-spacing-0',
+        thead: '[&>tr]:bg-elevated/50 [&>tr]:after:content-none',
+        tbody: '[&>tr]:last:[&>td]:border-b-0',
+        th: 'py-2 first:rounded-l-lg last:rounded-r-lg border-y border-default first:border-l last:border-r',
+        td: 'border-b border-default',
+      }"
+      :pagination-options="{
+        manualPagination: true,
+        pageCount: totalPages,
+        rowCount: totalRows,
+      }"
+      :sorting-options="{
+        manualSorting: true,
+      }"
+      @update:sorting="handleSortingChange"
+    >
+      <!-- Actions slot -->
+      <template
+        v-if="$slots.actions"
+        #actions-cell="{ row }"
+      >
+        <slot
+          name="actions"
+          :row="row"
         />
+      </template>
+    </UTable>
 
-        <TableBody
-          :data="data"
-          :columns="computedColumns"
-          :loading="loading"
-          :empty-message="emptyMessage"
-        />
-      </table>
+    <!-- Pagination -->
+    <div
+      v-if="totalPages > 1"
+      class="flex items-center justify-between gap-3 px-4 py-3 border-t border-default"
+    >
+      <div class="text-sm text-muted">
+        <template v-if="enableSelection">
+          {{ selectedRows.length }} of {{ totalRows }} row(s) selected.
+        </template>
+      </div>
 
-      <!-- Pagination -->
-      <TablePagination
-        v-if="pagination && pagination.pages > 1"
-        :current-page="pagination.page"
-        :total-pages="pagination.pages"
-        :total-count="pagination.total"
-        :per-page="perPage"
-        @page-change="handlePageChange"
-        @per-page-change="handlePerPageChange"
+      <UPagination
+        :model-value="currentPage"
+        :items-per-page="perPage"
+        :total="totalRows"
+        @update:model-value="handlePageChange"
       />
     </div>
   </div>
 </template>
 
-<script setup lang="ts" generic="T extends TableRow">
-import { defineComponent, h, ref, computed, watch, onMounted, onUnmounted, readonly } from 'vue'
-import type { TableRow, Column, Filter, TableQueryParams } from './table/types'
-import FormCheckbox from './form/FormCheckbox.vue'
+<script setup lang="ts" generic="T extends Record<string, any>">
+import { h } from 'vue'
+import type { ColumnDef, SortingState } from '@tanstack/vue-table'
+import type { Filter } from './table/types'
+
+interface Column<TData = Record<string, unknown>> {
+  key: string
+  label?: string
+  sortable?: boolean
+  class?: string
+  render?: (value: unknown, row: TData) => string | number | boolean
+}
 
 interface Props {
   apiEndpoint: string
@@ -69,6 +133,8 @@ interface Props {
   defaultSortOrder?: 'asc' | 'desc'
   defaultPerPage?: number
   enableSelection?: boolean
+  showSearch?: boolean
+  showFilters?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -79,25 +145,144 @@ const props = withDefaults(defineProps<Props>(), {
   defaultSortOrder: 'desc',
   defaultPerPage: 10,
   enableSelection: false,
+  showSearch: true,
+  showFilters: true,
 })
 
-// Reactive state
-const data = ref<T[]>([]) as Ref<T[]>
+// Refs
+const tableRef = useTemplateRef('tableRef')
+const data = ref<T[]>([])
 const loading = ref(false)
-const pagination = ref<Pagination | null>(null)
+const totalRows = ref(0)
+const totalPages = ref(0)
 
-// Selection state
-const selectedRows = ref<Set<string | number>>(new Set())
-const selectAll = ref(false)
+// Query state
+const searchQuery = ref('')
+const filterValues = ref<Record<string, string | number | boolean | null>>({})
+const currentPage = ref(1)
+const perPage = ref(props.defaultPerPage)
+const sorting = ref<SortingState>([
+  {
+    id: props.defaultSortBy,
+    desc: props.defaultSortOrder === 'desc',
+  },
+])
 
-// Loading delay to prevent flicker for fast API calls
-// - Standard operations (search, filters): 150ms delay
-// - Fast operations (sort, pagination): 50ms delay
-// - If the request completes before the delay, loading state never shows
+// Row selection state
+const rowSelectionState = ref<Record<string, boolean>>({})
+
+// Computed selected rows for external access
+const selectedRows = computed(() => {
+  return Object.keys(rowSelectionState.value)
+    .filter(key => rowSelectionState.value[key])
+    .map((key) => {
+      const index = Number.parseInt(key, 10)
+      return data.value[index]
+    })
+    .filter(Boolean)
+})
+
+// Check if any rows are selected
+const hasSelectedRows = computed(() => {
+  return selectedRows.value.length > 0
+})
+
+// Check if any filters are active
+const hasActiveFilters = computed(() => {
+  return Object.values(filterValues.value).some(value =>
+    value !== null && value !== undefined && value !== '',
+  )
+})// Build TanStack Table columns from our column definitions
+const tableColumns = computed((): ColumnDef<T>[] => {
+  const cols: ColumnDef<T>[] = []
+
+  // Add selection column if enabled
+  if (props.enableSelection) {
+    cols.push({
+      id: 'select',
+      header: ({ table }) =>
+        h(resolveComponent('UCheckbox'), {
+          'modelValue': table.getIsSomePageRowsSelected()
+            ? 'indeterminate'
+            : table.getIsAllPageRowsSelected(),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+            table.toggleAllPageRowsSelected(!!value),
+          'aria-label': 'Select all',
+        }),
+      cell: ({ row }) =>
+        h(resolveComponent('UCheckbox'), {
+          'modelValue': row.getIsSelected(),
+          'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
+            row.toggleSelected(!!value),
+          'aria-label': 'Select row',
+        }),
+      enableSorting: false,
+    })
+  }
+
+  // Add data columns
+  props.columns.forEach((col) => {
+    const columnDef: ColumnDef<T> = {
+      accessorKey: col.key,
+      id: col.key,
+      header: col.label || col.key,
+      enableSorting: col.sortable ?? false,
+      meta: col.class
+        ? {
+            class: {
+              th: col.class,
+              td: col.class,
+            },
+          }
+        : undefined,
+    }
+
+    // Add custom cell renderer if provided
+    if (col.render) {
+      columnDef.cell = ({ row }) => {
+        const value = row.getValue(col.key)
+        return col.render!(value, row.original)
+      }
+    }
+
+    cols.push(columnDef)
+  })
+
+  return cols
+})
+
+// Query parameters for API
+const queryParams = computed(() => {
+  const params: Record<string, string | number | boolean> = {
+    page: currentPage.value,
+    limit: perPage.value,
+  }
+
+  // Add sorting
+  if (sorting.value.length > 0 && sorting.value[0]) {
+    params.sortBy = sorting.value[0].id
+    params.sortOrder = sorting.value[0].desc ? 'desc' : 'asc'
+  }
+
+  // Add search
+  if (searchQuery.value) {
+    params.search = searchQuery.value
+  }
+
+  // Add filters
+  Object.entries(filterValues.value).forEach(([key, value]) => {
+    if (value !== null && value !== undefined && value !== '') {
+      params[key] = value
+    }
+  })
+
+  return params
+})
+
+// Fetch data from API
 let loadingTimeout: ReturnType<typeof setTimeout> | null = null
 
-// Methods
-const fetchData = async (showLoading = true, loadingDelay = 150) => {
+const fetchData = async (showLoadingDelay = 150) => {
   // Clear any existing timeout
   if (loadingTimeout) {
     clearTimeout(loadingTimeout)
@@ -105,32 +290,37 @@ const fetchData = async (showLoading = true, loadingDelay = 150) => {
   }
 
   // Set loading with delay to prevent flicker for fast requests
-  if (showLoading) {
-    loadingTimeout = setTimeout(() => {
-      loading.value = true
-      loadingTimeout = null
-    }, loadingDelay)
-  }
+  loadingTimeout = setTimeout(() => {
+    loading.value = true
+    loadingTimeout = null
+  }, showLoadingDelay)
 
   try {
-    const response = await $fetch<ApiResponse<TableRow[]>>(props.apiEndpoint, {
+    const response = await $fetch<ApiResponse<T[]>>(props.apiEndpoint, {
       query: queryParams.value,
     })
 
     if (response.success) {
-      data.value = response.data as T[]
-      pagination.value = response.pagination || null
+      data.value = response.data || []
+
+      if (response.pagination) {
+        totalRows.value = response.pagination.total || 0
+        totalPages.value = response.pagination.pages || 0
+        currentPage.value = response.pagination.page || 1
+      }
     }
     else {
       console.error('API returned success: false')
       data.value = []
-      pagination.value = null
+      totalRows.value = 0
+      totalPages.value = 0
     }
   }
   catch (error) {
     console.error('Failed to fetch data:', error)
     data.value = []
-    pagination.value = null
+    totalRows.value = 0
+    totalPages.value = 0
   }
   finally {
     // Clear timeout and loading state
@@ -142,160 +332,16 @@ const fetchData = async (showLoading = true, loadingDelay = 150) => {
   }
 }
 
-// Query parameters
-const searchQuery = ref('')
-const filterValues = ref<Record<string, string | number | boolean | null>>({})
-const sortBy = ref(props.defaultSortBy)
-const sortOrder = ref<'asc' | 'desc'>(props.defaultSortOrder)
-const currentPage = ref(1)
-const perPage = ref(props.defaultPerPage)
-
-// Computed
-const queryParams = computed((): TableQueryParams => {
-  const params: TableQueryParams = {
-    page: currentPage.value,
-    limit: perPage.value,
-    sortBy: sortBy.value,
-    sortOrder: sortOrder.value,
-  }
-
-  if (searchQuery.value) {
-    params.search = searchQuery.value
-  }
-
-  // Add filter values
-  Object.entries(filterValues.value).forEach(([key, value]) => {
-    if (value !== null && value !== undefined && value !== '') {
-      params[key] = value
-    }
-  })
-
-  return params
-})
-
-// Computed columns with optional selection column
-const computedColumns = computed(() => {
-  if (!props.enableSelection) {
-    return props.columns
-  }
-
-  const selectionColumn: Column<T> = {
-    key: '_selection',
-    label: '',
-    sortable: false,
-    class: 'selection-column',
-    component: defineComponent({
-      props: {
-        row: { type: Object, required: true },
-        value: { type: null, required: false },
-      },
-      setup(componentProps) {
-        const row = componentProps.row as T
-        const rowId = row.id
-        const isSelected = computed(() => rowId ? selectedRows.value.has(rowId) : false)
-
-        const toggleRow = (checked: boolean) => {
-          if (rowId && checked) {
-            selectedRows.value.add(rowId)
-          }
-          else if (rowId) {
-            selectedRows.value.delete(rowId)
-          }
-
-          // Update select all state
-          selectAll.value = data.value.length > 0
-            && data.value.every((row) => {
-              return row.id && selectedRows.value.has(row.id)
-            })
-        }
-
-        return () => h(FormCheckbox, {
-          'id': `row-checkbox-${rowId}`,
-          'modelValue': isSelected.value,
-          'onUpdate:modelValue': toggleRow,
-          'class': 'row-checkbox',
-        })
-      },
-    }),
-  }
-
-  return [selectionColumn, ...props.columns]
-})
-
-// Selection methods
-const toggleSelectAll = () => {
-  if (selectAll.value) {
-    selectedRows.value.clear()
-    selectAll.value = false
-  }
-  else {
-    data.value.forEach((row) => {
-      if (row.id) selectedRows.value.add(row.id)
-    })
-    selectAll.value = true
-  }
-}
-
-const clearSelection = () => {
-  selectedRows.value.clear()
-  selectAll.value = false
-}
-
-// Watch for data changes to update select all state
-watch(data, () => {
-  if (data.value.length === 0) {
-    selectAll.value = false
-  }
-  else {
-    selectAll.value = data.value.every((row) => {
-      return row.id && selectedRows.value.has(row.id)
-    })
-  }
-}, { deep: true })
-
-// Expose selection methods and state for parent components
-defineExpose({
-  selectedRows: readonly(selectedRows),
-  clearSelection,
-  selectAll: readonly(selectAll),
-  toggleSelectAll,
-})
-
-const handleSearch = (query: string) => {
-  searchQuery.value = query
+// Event handlers
+const handleSortingChange = (newSorting: SortingState) => {
+  sorting.value = newSorting
   currentPage.value = 1
-  fetchData()
-}
-
-const handleSort = (column: string) => {
-  if (sortBy.value === column) {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
-  }
-  else {
-    sortBy.value = column
-    sortOrder.value = 'asc'
-  }
-  currentPage.value = 1
-  // Use shorter delay for sorting since it's typically fast
-  fetchData(true, 50)
+  fetchData(50) // Fast operation
 }
 
 const handlePageChange = (page: number) => {
   currentPage.value = page
-  // Use shorter delay for pagination since it's typically fast
-  fetchData(true, 50)
-}
-
-const handlePerPageChange = (newPerPage: number) => {
-  perPage.value = newPerPage
-  currentPage.value = 1
-  fetchData()
-}
-
-const handleFiltersUpdate = (filters: Record<string, string | number | boolean | null>) => {
-  filterValues.value = { ...filters }
-  currentPage.value = 1
-  fetchData()
+  fetchData(50) // Fast operation
 }
 
 const handleFiltersClear = () => {
@@ -303,6 +349,35 @@ const handleFiltersClear = () => {
   currentPage.value = 1
   fetchData()
 }
+
+// Watchers
+watch(searchQuery, () => {
+  currentPage.value = 1
+  fetchData()
+})
+
+watch(filterValues, () => {
+  currentPage.value = 1
+  fetchData()
+}, { deep: true })
+
+watch(() => props.apiEndpoint, () => {
+  currentPage.value = 1
+  fetchData()
+})
+
+// Clear selection helper
+const clearSelection = () => {
+  rowSelectionState.value = {}
+}
+
+// Expose for parent components
+defineExpose({
+  selectedRows: computed(() => selectedRows.value),
+  clearSelection,
+  refresh: fetchData,
+  tableApi: computed(() => tableRef.value?.tableApi),
+})
 
 // Initialize
 onMounted(() => {
@@ -316,88 +391,15 @@ onUnmounted(() => {
     loadingTimeout = null
   }
 })
-
-// Watch for prop changes
-watch(() => props.apiEndpoint, () => {
-  fetchData()
-}, { immediate: false })
 </script>
 
 <style scoped>
 .data-table {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
   width: 100%;
-}
-
-.table-controls {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.table-controls__top {
-  display: flex;
-  flex-direction: row;
-  gap: var(--spacing-md);
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
-
-.table-container {
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
-  background-color: var(--primary-bg-color);
-  overflow: auto;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: var(--primary-bg-color);
-}
-
-@media (max-width: 768px) {
-  .table-controls {
-    gap: 12px;
-  }
-
-  .table-controls__top {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-}
-
-/* Selection styles */
-:deep(.selection-column) {
-  width: 40px;
-  text-align: center;
-  vertical-align: middle;
-}
-
-/* Override FormCheckbox styles for table usage */
-:deep(.selection-column .form-field) {
-  margin-bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-:deep(.selection-column .form-group) {
-  margin-bottom: 0;
-  justify-content: center;
-  align-items: center;
-  height: auto;
-}
-
-:deep(.selection-column .form-group label) {
-  display: none; /* Hide the label in table context */
-}
-
-:deep(.selection-column .form-group input[type="checkbox"]) {
-  margin: 0;
+  border: 1px solid var(--ui-border-default);
+  border-radius: var(--ui-radius);
+  overflow: hidden;
 }
 </style>
