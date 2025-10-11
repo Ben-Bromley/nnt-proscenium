@@ -43,6 +43,93 @@
  * - 429: Too many cancellation requests
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    const reservationCode = getRouterParam(event, 'code')
+
+    if (!reservationCode) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Reservation code is required',
+      })
+    }
+
+    // Find the reservation
+    const reservation = await prisma.reservation.findUnique({
+      where: { reservationCode },
+      select: {
+        id: true,
+        status: true,
+        customerName: true,
+        performance: {
+          select: {
+            id: true,
+            title: true,
+            startDateTime: true,
+            show: {
+              select: {
+                title: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!reservation) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Reservation not found',
+      })
+    }
+
+    // Check if reservation can be cancelled
+    if (reservation.status === 'CANCELLED_BY_CUSTOMER' || reservation.status === 'CANCELLED_BY_ADMIN') {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Reservation is already cancelled',
+      })
+    }
+
+    if (reservation.status === 'COLLECTED') {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Cannot cancel a reservation that has already been collected',
+      })
+    }
+
+    // Check if performance has already started
+    if (reservation.performance.startDateTime <= new Date()) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Cannot cancel reservation for a performance that has already started',
+      })
+    }
+
+    // Update reservation status to cancelled
+    const cancelledReservation = await prisma.reservation.update({
+      where: { id: reservation.id },
+      data: {
+        status: 'CANCELLED_BY_CUSTOMER',
+        updatedAt: new Date(),
+      },
+      select: {
+        id: true,
+        reservationCode: true,
+        status: true,
+        customerName: true,
+        updatedAt: true,
+      },
+    })
+
+    return successResponse(
+      cancelledReservation,
+      `Reservation ${reservationCode} has been successfully cancelled`,
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

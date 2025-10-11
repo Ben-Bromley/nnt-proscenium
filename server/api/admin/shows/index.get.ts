@@ -60,6 +60,79 @@
  * - 403: Insufficient permissions (admin access required)
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    await requireRole(event, 'ADMIN')
+
+    const query = getQuery(event)
+
+    // Parse and validate query parameters
+    const { page, limit, skip } = validatePagination(query)
+    const search = query.search as string || ''
+    const status = query.status as string || ''
+    const showType = query.showType as string || ''
+
+    // Validate and set sorting
+    const allowedSortFields = ['createdAt', 'updatedAt', 'title', 'status']
+    const { sortBy, sortOrder } = validateSort(query, allowedSortFields)
+
+    // Build where clause
+    const where: Record<string, unknown> = {}
+
+    // Status filter
+    if (status) {
+      where.status = status
+    }
+
+    // Show type filter
+    if (showType) {
+      where.showType = showType
+    }
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { description: { contains: search } },
+      ]
+    }
+
+    // Build orderBy clause
+    const orderBy: Record<string, string> = {}
+    orderBy[sortBy] = sortOrder
+
+    // Execute queries
+    const [shows, total] = await Promise.all([
+      prisma.show.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          status: true,
+          showType: true,
+          posterImageUrl: true,
+          programmeUrl: true,
+          ageRating: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.show.count({ where }),
+    ])
+
+    return paginatedResponse(
+      shows,
+      { page, total, limit },
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

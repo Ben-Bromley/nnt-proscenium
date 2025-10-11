@@ -49,6 +49,136 @@
  * - 404: Show not found
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    const slug = getRouterParam(event, 'slug')
+
+    if (!slug) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Show slug is required',
+      })
+    }
+
+    const query = getQuery(event)
+    const includeAvailability = query.includeAvailability !== 'false'
+    const upcomingOnly = query.upcomingOnly !== 'false'
+
+    // First find the show
+    const show = await prisma.show.findUnique({
+      where: {
+        slug,
+        status: 'PUBLISHED', // Only show published shows to public
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+      },
+    })
+
+    if (!show) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Show not found',
+      })
+    }
+
+    // Build performance query
+    const performanceWhere: Record<string, unknown> = {
+      showId: show.id,
+    }
+
+    if (upcomingOnly) {
+      performanceWhere.startDateTime = { gte: new Date() }
+    }
+
+    const performances = await prisma.performance.findMany({
+      where: performanceWhere,
+      select: {
+        id: true,
+        title: true,
+        startDateTime: true,
+        endDateTime: true,
+        type: true,
+        details: true,
+        status: true,
+        maxCapacity: true,
+        reservationsOpen: true,
+        reservationInstructions: true,
+        externalBookingLink: true,
+        createdAt: true,
+        updatedAt: true,
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            capacity: true,
+          },
+        },
+        ticketPrices: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            price: true,
+            notes: true,
+            ticketType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        startDateTime: 'asc',
+      },
+    })
+
+    // Add availability information if requested
+    const enrichedPerformances = includeAvailability
+      ? await Promise.all(
+          performances.map(async (performance) => {
+            const reservedCount = await prisma.reservedTicket.aggregate({
+              where: {
+                reservation: {
+                  performanceId: performance.id,
+                  status: { notIn: ['CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_ADMIN'] },
+                },
+              },
+              _sum: { quantity: true },
+            })
+
+            const totalReserved = reservedCount._sum.quantity ?? 0
+            const availableTickets = performance.maxCapacity - totalReserved
+
+            return {
+              ...performance,
+              availability: {
+                totalCapacity: performance.maxCapacity,
+                availableTickets: Math.max(0, availableTickets),
+                reservedCount: totalReserved,
+              },
+            }
+          }),
+        )
+      : performances
+
+    return successResponse({
+      show: {
+        id: show.id,
+        title: show.title,
+        slug: show.slug,
+      },
+      performances: enrichedPerformances,
+    })
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

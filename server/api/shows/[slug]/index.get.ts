@@ -41,6 +41,90 @@
  * - 404: Show not found or not published
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    const slug = getRouterParam(event, 'slug')
+
+    if (!slug) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Show slug is required',
+      })
+    }
+
+    const show = await prisma.show.findUnique({
+      where: {
+        slug,
+        status: 'PUBLISHED', // Only show published shows to public
+      },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        showType: true,
+        posterImageUrl: true,
+        programmeUrl: true,
+        ageRating: true,
+        createdAt: true,
+        updatedAt: true,
+        performances: {
+          where: {
+            startDateTime: { gte: new Date() }, // Only upcoming performances
+          },
+          select: {
+            id: true,
+            title: true,
+            startDateTime: true,
+            endDateTime: true,
+            type: true,
+            details: true,
+            status: true,
+            maxCapacity: true,
+            reservationsOpen: true,
+            reservationInstructions: true,
+            externalBookingLink: true,
+            venue: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+                capacity: true,
+              },
+            },
+          },
+          orderBy: {
+            startDateTime: 'asc',
+          },
+        },
+        contentWarnings: {
+          select: {
+            notes: true,
+            contentWarning: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+                icon: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!show) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Show not found',
+      })
+    }
+
+    return successResponse(show)
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

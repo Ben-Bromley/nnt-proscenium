@@ -69,6 +69,104 @@
  * - 403: Insufficient permissions (FOH access required)
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+import { reservationWithRelationsSelectQuery } from '~~/server/utils/database/reservation'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    // FOH access requires staff authentication
+    const user = await requireAuth(event)
+    if (!user.roles.includes('ADMIN') && !user.roles.includes('STAFF')) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Access denied. Staff access required.',
+      })
+    }
+
+    const query = getQuery(event)
+
+    // Validate pagination and sorting
+    const { page, limit, skip } = validatePagination(query)
+    const { sortBy, sortOrder } = validateSort(query, [
+      'createdAt', 'customerName', 'status', 'totalPrice',
+    ])
+
+    // Filter parameters
+    const status = query.status as string
+    const performanceId = query.performance_id ? Number(query.performance_id) : undefined
+    const search = query.search as string
+    const today = query.today === 'true'
+    const upcoming = query.upcoming === 'true'
+
+    // Build where clause
+    const where = {} as Record<string, unknown>
+
+    if (status) {
+      where.status = status
+    }
+
+    if (performanceId) {
+      where.performanceId = performanceId
+    }
+
+    if (search) {
+      where.OR = [
+        { customerName: { contains: search, mode: 'insensitive' } },
+        { customerEmail: { contains: search, mode: 'insensitive' } },
+        { reservationCode: { contains: search, mode: 'insensitive' } },
+      ]
+    }
+
+    if (today) {
+      const startOfDay = new Date()
+      startOfDay.setHours(0, 0, 0, 0)
+      const endOfDay = new Date()
+      endOfDay.setHours(23, 59, 59, 999)
+
+      where.performance = {
+        startDateTime: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+      }
+    }
+    else if (upcoming) {
+      where.performance = {
+        startDateTime: {
+          gte: new Date(),
+        },
+      }
+    }
+
+    // Handle sort mapping
+    let orderBy = {} as Record<string, string>
+    if (sortBy === 'customerName') {
+      orderBy = { customerName: sortOrder }
+    }
+    else if (sortBy === 'totalPrice') {
+      orderBy = { totalPrice: sortOrder }
+    }
+    else {
+      orderBy = { createdAt: sortOrder }
+    }
+
+    const [reservations, total] = await Promise.all([
+      prisma.reservation.findMany({
+        where,
+        select: reservationWithRelationsSelectQuery,
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.reservation.count({ where }),
+    ])
+
+    return paginatedResponse(
+      reservations,
+      { page, total, limit },
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

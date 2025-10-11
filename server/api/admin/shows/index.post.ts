@@ -72,6 +72,53 @@
  * - 409: Show title or slug already exists
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    await requireRole(event, 'ADMIN')
+
+    const body = await readBody(event)
+
+    // Validate request body using Zod schema
+    const validatedData = showCreateSchema.parse(body)
+
+    // Check if show with same slug already exists
+    const existingShow = await prisma.show.findUnique({
+      where: { slug: validatedData.slug },
+    })
+
+    if (existingShow) {
+      throw createError({
+        statusCode: 409,
+        statusMessage: `A show with the slug "${validatedData.slug}" already exists`,
+      })
+    }
+
+    // Create the show
+    const show = await prisma.show.create({
+      data: validatedData,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        status: true,
+        showType: true,
+        posterImageUrl: true,
+        programmeUrl: true,
+        ageRating: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    })
+
+    return successResponse(
+      show,
+      `Show "${show.title}" created successfully`,
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

@@ -58,6 +58,104 @@
  * - 404: Reservation not found
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    const reservationCode = getRouterParam(event, 'code')
+
+    if (!reservationCode) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Reservation code is required',
+      })
+    }
+
+    const reservation = await prisma.reservation.findUnique({
+      where: { reservationCode },
+      select: {
+        id: true,
+        reservationCode: true,
+        totalPrice: true,
+        reservationDateTime: true,
+        status: true,
+        notes: true,
+        collectionDeadline: true,
+        customerName: true,
+        customerEmail: true,
+        customerPhone: true,
+        createdAt: true,
+        updatedAt: true,
+        performance: {
+          select: {
+            id: true,
+            title: true,
+            startDateTime: true,
+            endDateTime: true,
+            details: true,
+            reservationInstructions: true,
+            show: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                description: true,
+                posterImageUrl: true,
+                ageRating: true,
+              },
+            },
+            venue: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+              },
+            },
+          },
+        },
+        reservedTickets: {
+          select: {
+            id: true,
+            quantity: true,
+            pricePerItemAtReservation: true,
+            ticketTypeNameAtReservation: true,
+            ticketType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    if (!reservation) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Reservation not found',
+      })
+    }
+
+    // Calculate totals
+    const ticketsSummary = reservation.reservedTickets.map(ticket => ({
+      ...ticket,
+      totalPrice: ticket.pricePerItemAtReservation * ticket.quantity,
+    }))
+
+    const calculatedTotal = ticketsSummary.reduce(
+      (sum, ticket) => sum + ticket.totalPrice,
+      0,
+    )
+
+    return successResponse({
+      ...reservation,
+      reservedTickets: ticketsSummary,
+      calculatedTotal,
+    })
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

@@ -59,6 +59,110 @@
  * - 400: Invalid query parameters
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    const query = getQuery(event)
+
+    // Parse and validate query parameters
+    const { page, limit, skip } = validatePagination(query)
+    const search = query.search as string || ''
+    const venueId = query.venueId as string || ''
+    const upcomingOnly = query.upcomingOnly !== 'false'
+    const availableOnly = query.availableOnly === 'true'
+
+    // Validate and set sorting
+    const allowedSortFields = ['startDateTime', 'createdAt', 'title']
+    const { sortBy, sortOrder } = validateSort(query, allowedSortFields)
+
+    // Build where clause
+    const where: Record<string, unknown> = {
+      show: {
+        status: 'PUBLISHED', // Only show performances for published shows
+      },
+    }
+
+    // Venue filter
+    if (venueId) {
+      where.venueId = venueId
+    }
+
+    // Upcoming only filter
+    if (upcomingOnly) {
+      where.startDateTime = { gte: new Date() }
+    }
+
+    // Available for reservations filter
+    if (availableOnly) {
+      where.reservationsOpen = true
+      where.status = 'SCHEDULED'
+    }
+
+    // Search filter
+    if (search) {
+      where.OR = [
+        { title: { contains: search } },
+        { details: { contains: search } },
+        { show: { title: { contains: search } } },
+        { venue: { name: { contains: search } } },
+      ]
+    }
+
+    // Build orderBy clause
+    const orderBy: Record<string, string> = {}
+    orderBy[sortBy] = sortOrder
+
+    // Execute queries
+    const [performances, total] = await Promise.all([
+      prisma.performance.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy,
+        select: {
+          id: true,
+          title: true,
+          startDateTime: true,
+          endDateTime: true,
+          type: true,
+          details: true,
+          status: true,
+          maxCapacity: true,
+          reservationsOpen: true,
+          reservationInstructions: true,
+          externalBookingLink: true,
+          createdAt: true,
+          updatedAt: true,
+          show: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              description: true,
+              posterImageUrl: true,
+              ageRating: true,
+            },
+          },
+          venue: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+              capacity: true,
+            },
+          },
+        },
+      }),
+      prisma.performance.count({ where }),
+    ])
+
+    return paginatedResponse(
+      performances,
+      { page, total, limit },
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

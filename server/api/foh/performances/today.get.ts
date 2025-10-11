@@ -53,6 +53,133 @@
  * - 403: Insufficient permissions (FOH access required)
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    // FOH access requires staff authentication
+    const user = await requireAuth(event)
+    if (!user.roles.includes('ADMIN') && !user.roles.includes('STAFF')) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Access denied. Staff access required.',
+      })
+    }
+
+    const today = new Date()
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+
+    const performances = await prisma.performance.findMany({
+      where: {
+        startDateTime: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        show: {
+          status: 'PUBLISHED',
+        },
+      },
+      select: {
+        id: true,
+        title: true,
+        startDateTime: true,
+        endDateTime: true,
+        type: true,
+        details: true,
+        status: true,
+        maxCapacity: true,
+        reservationsOpen: true,
+        reservationInstructions: true,
+        show: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            description: true,
+            posterImageUrl: true,
+            ageRating: true,
+          },
+        },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+          },
+        },
+      },
+      orderBy: {
+        startDateTime: 'asc',
+      },
+    })
+
+    // Enrich with reservation statistics
+    const enrichedPerformances = await Promise.all(
+      performances.map(async (performance) => {
+        const [reservationStats, ticketStats] = await Promise.all([
+          prisma.reservation.groupBy({
+            by: ['status'],
+            where: {
+              performanceId: performance.id,
+            },
+            _count: {
+              status: true,
+            },
+          }),
+          prisma.reservedTicket.aggregate({
+            where: {
+              reservation: {
+                performanceId: performance.id,
+                status: { notIn: ['CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_ADMIN'] },
+              },
+            },
+            _sum: { quantity: true },
+          }),
+        ])
+
+        const totalReserved = ticketStats._sum.quantity ?? 0
+        const availableCapacity = Math.max(0, performance.maxCapacity - totalReserved)
+
+        const statusCounts = reservationStats.reduce((acc, stat) => {
+          acc[stat.status] = stat._count.status
+          return acc
+        }, {} as Record<string, number>)
+
+        return {
+          ...performance,
+          reservationSummary: {
+            totalReservations: reservationStats.reduce((sum, stat) => sum + stat._count.status, 0),
+            pendingCollection: statusCounts.PENDING_COLLECTION ?? 0,
+            collected: statusCounts.COLLECTED ?? 0,
+            cancelled: (statusCounts.CANCELLED_BY_CUSTOMER ?? 0) + (statusCounts.CANCELLED_BY_ADMIN ?? 0),
+            totalTicketsReserved: totalReserved,
+            availableCapacity,
+            utilizationPercentage: performance.maxCapacity > 0
+              ? Math.round((totalReserved / performance.maxCapacity) * 100)
+              : 0,
+          },
+        }
+      }),
+    )
+
+    return successResponse({
+      date: today.toISOString().split('T')[0],
+      performances: enrichedPerformances,
+      summary: {
+        totalPerformances: enrichedPerformances.length,
+        totalReservations: enrichedPerformances.reduce(
+          (sum, p) => sum + p.reservationSummary.totalReservations,
+          0,
+        ),
+        totalPendingCollection: enrichedPerformances.reduce(
+          (sum, p) => sum + p.reservationSummary.pendingCollection,
+          0,
+        ),
+      },
+    })
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })

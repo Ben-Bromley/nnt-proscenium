@@ -59,6 +59,119 @@
  * - 409: Venue scheduling conflict
  * - 500: Internal server error
  */
+import prisma from '~~/lib/prisma'
+
 export default defineEventHandler(async (event) => {
-  return 'Hello Nitro'
+  try {
+    await requireRole(event, 'ADMIN')
+
+    const body = await readBody(event)
+
+    // Basic validation
+    if (!body.title || !body.startDateTime || !body.endDateTime || !body.showId || !body.maxCapacity) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Missing required fields: title, startDateTime, endDateTime, showId, and maxCapacity',
+      })
+    }
+
+    // Validate dates
+    const startDate = new Date(body.startDateTime)
+    const endDate = new Date(body.endDateTime)
+
+    if (startDate >= endDate) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Start date must be before end date',
+      })
+    }
+
+    if (startDate <= new Date()) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Performance must be scheduled for a future date',
+      })
+    }
+
+    // Check if show exists
+    const show = await prisma.show.findUnique({
+      where: { id: body.showId },
+      select: { id: true, title: true, status: true },
+    })
+
+    if (!show) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Show not found',
+      })
+    }
+
+    // Check if venue exists (if provided)
+    if (body.venueId) {
+      const venue = await prisma.venue.findUnique({
+        where: { id: body.venueId },
+        select: { id: true, name: true, isActive: true },
+      })
+
+      if (!venue || !venue.isActive) {
+        throw createError({
+          statusCode: 404,
+          statusMessage: 'Venue not found or inactive',
+        })
+      }
+    }
+
+    // Create the performance
+    const performance = await prisma.performance.create({
+      data: {
+        title: body.title,
+        startDateTime: startDate,
+        endDateTime: endDate,
+        type: body.type || 'PERFORMANCE',
+        details: body.details,
+        status: body.status || 'SCHEDULED',
+        maxCapacity: Number(body.maxCapacity),
+        reservationsOpen: body.reservationsOpen ?? true,
+        reservationInstructions: body.reservationInstructions,
+        externalBookingLink: body.externalBookingLink,
+        showId: body.showId,
+        venueId: body.venueId,
+      },
+      select: {
+        id: true,
+        title: true,
+        startDateTime: true,
+        endDateTime: true,
+        type: true,
+        details: true,
+        status: true,
+        maxCapacity: true,
+        reservationsOpen: true,
+        reservationInstructions: true,
+        externalBookingLink: true,
+        createdAt: true,
+        show: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+          },
+        },
+        venue: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    })
+
+    return successResponse(
+      performance,
+      `Performance "${performance.title}" created successfully`,
+    )
+  }
+  catch (error) {
+    return handleApiError(error)
+  }
 })
