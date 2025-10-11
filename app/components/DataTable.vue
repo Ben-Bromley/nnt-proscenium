@@ -222,8 +222,18 @@ const tableColumns = computed((): ColumnDef<T>[] => {
 
   // Add data columns
   props.columns.forEach((col) => {
-    const columnDef: ColumnDef<T> = {
-      accessorKey: col.key,
+    // Helper function to get nested property value
+    const getNestedValue = (obj: Record<string, unknown>, path: string): unknown => {
+      return path.split('.').reduce<unknown>((current, key) => {
+        if (current && typeof current === 'object' && key in current) {
+          return (current as Record<string, unknown>)[key]
+        }
+        return undefined
+      }, obj)
+    }
+
+    // Build base column definition
+    const baseConfig = {
       id: col.key,
       header: col.label || col.key,
       enableSorting: col.sortable ?? false,
@@ -241,10 +251,23 @@ const tableColumns = computed((): ColumnDef<T>[] => {
       },
     }
 
+    // Create column definition with either accessorFn (nested) or accessorKey (simple)
+    const columnDef: ColumnDef<T> = col.key.includes('.')
+      ? {
+          ...baseConfig,
+          accessorFn: (row: T) => getNestedValue(row as Record<string, unknown>, col.key),
+        }
+      : {
+          ...baseConfig,
+          accessorKey: col.key,
+        }
+
     // Add custom cell renderer if provided
     if (col.render) {
       columnDef.cell = ({ row }) => {
-        const value = row.getValue(col.key)
+        const value = col.key.includes('.')
+          ? getNestedValue(row.original as Record<string, unknown>, col.key)
+          : row.getValue(col.key)
         return col.render!(value, row.original)
       }
     }
