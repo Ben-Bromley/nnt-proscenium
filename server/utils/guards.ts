@@ -54,3 +54,10 @@ export async function requireOwnershipOrAdmin(event: H3Event, resourceUserId: st
 
   return user
 }
+
+/**
+ * Guard to protect FOH routes that require ADMIN or MANAGER access
+ */
+export async function requireFOHAccess(event: H3Event) {
+  return await requireRole(event, ['ADMIN', 'MANAGER'])
+}

@@ -118,6 +118,7 @@ export const showFormSchema = z.object({
   posterImageUrl: z.string().url('Invalid poster image URL').or(z.literal('')),
   programmeUrl: z.string().url('Invalid programme URL').or(z.literal('')),
   ageRating: z.string().max(10, 'Age rating too long'),
+  status: showStatusSchema.optional(),
   isActive: z.boolean(),
 })
 

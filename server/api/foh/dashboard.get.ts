@@ -50,14 +50,8 @@ import prisma from '~~/lib/prisma'
 
 export default defineEventHandler(async (event) => {
   try {
-    // FOH dashboard requires staff authentication (could be ADMIN or STAFF role)
-    const user = await requireAuth(event)
-    if (!user.roles.includes('ADMIN') && !user.roles.includes('STAFF')) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Access denied. Staff access required.',
-      })
-    }
+    // FOH dashboard requires ADMIN or MANAGER role
+    await requireFOHAccess(event)
 
     const today = new Date()
     const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate())

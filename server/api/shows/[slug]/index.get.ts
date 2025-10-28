@@ -112,6 +112,22 @@ export default defineEventHandler(async (event) => {
             },
           },
         },
+        showTicketPrices: {
+          select: {
+            id: true,
+            price: true,
+            ticketType: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
+          },
+          orderBy: {
+            price: 'asc',
+          },
+        },
       },
     })
 

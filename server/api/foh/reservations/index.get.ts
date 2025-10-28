@@ -74,14 +74,8 @@ import { reservationWithRelationsSelectQuery } from '~~/server/utils/database/re
 
 export default defineEventHandler(async (event) => {
   try {
-    // FOH access requires staff authentication
-    const user = await requireAuth(event)
-    if (!user.roles.includes('ADMIN') && !user.roles.includes('STAFF')) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Access denied. Staff access required.',
-      })
-    }
+    // FOH access requires ADMIN or MANAGER role
+    await requireFOHAccess(event)
 
     const query = getQuery(event)
 

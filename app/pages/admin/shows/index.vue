@@ -22,8 +22,8 @@
         :filters="filters"
         search-placeholder="Search shows by title or description..."
         empty-message="No shows found"
-        default-sort-by="sortOrder"
-        default-sort-order="asc"
+        default-sort-by="createdAt"
+        default-sort-order="desc"
         :default-per-page="20"
         enable-selection
       >
@@ -66,12 +66,22 @@ const filters = [
     label: 'Status',
     type: 'select' as const,
     options: [
-      { label: 'Draft', value: 'draft' },
-      { label: 'Announced', value: 'announced' },
-      { label: 'Booking Open', value: 'booking_open' },
-      { label: 'Sold Out', value: 'sold_out' },
-      { label: 'Completed', value: 'completed' },
-      { label: 'Cancelled', value: 'cancelled' },
+      { label: 'Draft', value: 'DRAFT' },
+      { label: 'Published', value: 'PUBLISHED' },
+      { label: 'Cancelled', value: 'CANCELLED' },
+    ],
+  },
+  {
+    key: 'showType',
+    label: 'Show Type',
+    type: 'select' as const,
+    options: [
+      { label: 'In House', value: 'IN_HOUSE' },
+      { label: 'Studio', value: 'STUDIO' },
+      { label: 'Festival', value: 'FESTIVAL' },
+      { label: 'External Hire', value: 'EXTERNAL_HIRE' },
+      { label: 'Workshop', value: 'WORKSHOP' },
+      { label: 'Other', value: 'OTHER' },
     ],
   },
 ]
@@ -84,33 +94,11 @@ const columns = [
     sortable: true,
   },
   {
-    key: 'subtitle',
-    label: 'Subtitle',
-    sortable: false,
-  },
-  {
-    key: 'venue.name',
-    label: 'Venue',
-    sortable: true,
-  },
-  {
-    key: 'startDate',
-    label: 'Start Date',
+    key: 'showType',
+    label: 'Type',
     sortable: true,
     render: (value: unknown): string => {
-      if (!value) return '-'
-      const date = new Date(value as string)
-      return date.toLocaleDateString()
-    },
-  },
-  {
-    key: 'endDate',
-    label: 'End Date',
-    sortable: true,
-    render: (value: unknown): string => {
-      if (!value) return '-'
-      const date = new Date(value as string)
-      return date.toLocaleDateString()
+      return String(value || '-').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     },
   },
   {
@@ -119,6 +107,24 @@ const columns = [
     sortable: true,
     render: (value: unknown): string => {
       return String(value || '-').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    },
+  },
+  {
+    key: 'ageRating',
+    label: 'Age Rating',
+    sortable: false,
+    render: (value: unknown): string => {
+      return value ? String(value) : '-'
+    },
+  },
+  {
+    key: 'createdAt',
+    label: 'Created',
+    sortable: true,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      const date = new Date(value as string)
+      return date.toLocaleDateString()
     },
   },
   {

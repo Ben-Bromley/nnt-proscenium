@@ -56,6 +56,7 @@
  * - 500: Internal server error
  */
 import prisma from '~~/lib/prisma'
+import { sendReservationConfirmationEmail } from '~~/server/utils/email'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -144,18 +145,49 @@ export default defineEventHandler(async (event) => {
     const reservation = await prisma.$transaction(async (tx) => {
       let calculatedTotalPrice = 0
 
-      // Pre-calculate total price
+      // Pre-calculate total price using proper price hierarchy
       for (const ticketRequest of body.tickets) {
-        const ticketType = await tx.ticketType.findUnique({
-          where: { id: ticketRequest.ticketTypeId },
-          select: { defaultPrice: true },
+        // Priority: 1. Performance-specific price, 2. Show-specific price, 3. Default price
+        const performancePrice = await tx.performanceTicketPrice.findUnique({
+          where: {
+            performanceId_ticketTypeId: {
+              performanceId: body.performanceId,
+              ticketTypeId: ticketRequest.ticketTypeId,
+            },
+            isActive: true,
+          },
+          select: { price: true },
         })
 
-        if (!ticketType) {
-          throw new Error(`Ticket type not found: ${ticketRequest.ticketTypeId}`)
+        let ticketPrice = performancePrice?.price
+
+        if (!ticketPrice) {
+          const showPrice = await tx.showTicketPrice.findUnique({
+            where: {
+              showId_ticketTypeId: {
+                showId: performance.show!.id,
+                ticketTypeId: ticketRequest.ticketTypeId,
+              },
+              isActive: true,
+            },
+            select: { price: true },
+          })
+          ticketPrice = showPrice?.price
         }
 
-        calculatedTotalPrice += ticketType.defaultPrice * ticketRequest.quantity
+        if (!ticketPrice) {
+          const ticketType = await tx.ticketType.findUnique({
+            where: { id: ticketRequest.ticketTypeId },
+            select: { defaultPrice: true },
+          })
+          ticketPrice = ticketType?.defaultPrice
+        }
+
+        if (!ticketPrice) {
+          throw new Error(`Ticket type not found or has no price: ${ticketRequest.ticketTypeId}`)
+        }
+
+        calculatedTotalPrice += ticketPrice * ticketRequest.quantity
       }
 
       // Create reservation
@@ -181,28 +213,110 @@ export default defineEventHandler(async (event) => {
         },
       })
 
-      // Create reserved tickets
+      // Create reserved tickets with proper price lookup
       for (const ticketRequest of body.tickets) {
+        // Get ticket type info
         const ticketType = await tx.ticketType.findUnique({
           where: { id: ticketRequest.ticketTypeId },
-          select: { defaultPrice: true, name: true },
+          select: { name: true, defaultPrice: true },
         })
 
-        if (ticketType) {
-          await tx.reservedTicket.create({
-            data: {
-              reservationId: newReservation.id,
-              ticketTypeId: ticketRequest.ticketTypeId,
-              quantity: ticketRequest.quantity,
-              pricePerItemAtReservation: ticketType.defaultPrice,
-              ticketTypeNameAtReservation: ticketType.name,
-            },
-          })
+        if (!ticketType) {
+          throw new Error(`Ticket type not found: ${ticketRequest.ticketTypeId}`)
         }
+
+        // Find the actual price used (same hierarchy as above)
+        const performancePrice = await tx.performanceTicketPrice.findUnique({
+          where: {
+            performanceId_ticketTypeId: {
+              performanceId: body.performanceId,
+              ticketTypeId: ticketRequest.ticketTypeId,
+            },
+            isActive: true,
+          },
+          select: { price: true, id: true },
+        })
+
+        let actualPrice = performancePrice?.price
+        let showTicketPriceId = null
+        const performanceTicketPriceId = performancePrice?.id || null
+
+        if (!actualPrice) {
+          const showPrice = await tx.showTicketPrice.findUnique({
+            where: {
+              showId_ticketTypeId: {
+                showId: performance.show!.id,
+                ticketTypeId: ticketRequest.ticketTypeId,
+              },
+              isActive: true,
+            },
+            select: { price: true, id: true },
+          })
+          actualPrice = showPrice?.price
+          showTicketPriceId = showPrice?.id || null
+        }
+
+        if (!actualPrice) {
+          actualPrice = ticketType.defaultPrice
+        }
+
+        await tx.reservedTicket.create({
+          data: {
+            reservationId: newReservation.id,
+            ticketTypeId: ticketRequest.ticketTypeId,
+            quantity: ticketRequest.quantity,
+            pricePerItemAtReservation: actualPrice,
+            ticketTypeNameAtReservation: ticketType.name,
+            showTicketPriceId,
+            performanceTicketPriceId,
+          },
+        })
       }
 
       return newReservation
     })
+
+    // Fetch the complete reservation with ticket details for email
+    const completeReservation = await prisma.reservation.findUnique({
+      where: { id: reservation.id },
+      select: {
+        id: true,
+        reservationCode: true,
+        customerName: true,
+        customerEmail: true,
+        totalPrice: true,
+        reservedTickets: {
+          select: {
+            quantity: true,
+            pricePerItemAtReservation: true,
+            ticketTypeNameAtReservation: true,
+          },
+        },
+      },
+    })
+
+    // Send confirmation email to customer
+    try {
+      await sendReservationConfirmationEmail({
+        to: reservation.customerEmail,
+        reservationCode: reservation.reservationCode,
+        customerName: reservation.customerName,
+        performanceTitle: performance.title || 'Performance',
+        performanceDate: performance.startDateTime.toISOString(),
+        showTitle: performance.show?.title || 'Show',
+        venueName: performance.venue?.name || 'Venue',
+        totalPrice: reservation.totalPrice,
+        tickets: completeReservation?.reservedTickets.map(ticket => ({
+          quantity: ticket.quantity,
+          name: ticket.ticketTypeNameAtReservation,
+          price: ticket.pricePerItemAtReservation * ticket.quantity,
+        })) || [],
+      })
+    }
+    catch (emailError) {
+      // Log email error but don't fail the reservation
+      console.error('Failed to send reservation confirmation email:', emailError)
+    }
 
     return successResponse(
       {

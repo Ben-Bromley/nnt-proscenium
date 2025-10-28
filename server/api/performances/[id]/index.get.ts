@@ -109,6 +109,21 @@ export default defineEventHandler(async (event) => {
             posterImageUrl: true,
             programmeUrl: true,
             ageRating: true,
+            showTicketPrices: {
+              where: { isActive: true },
+              select: {
+                id: true,
+                price: true,
+                notes: true,
+                ticketType: {
+                  select: {
+                    id: true,
+                    name: true,
+                    description: true,
+                  },
+                },
+              },
+            },
             contentWarnings: {
               select: {
                 notes: true,
@@ -180,8 +195,47 @@ export default defineEventHandler(async (event) => {
     const totalReserved = reservedCount._sum.quantity ?? 0
     const availableTickets = Math.max(0, performance.maxCapacity - totalReserved)
 
+    // Determine which ticket prices to use
+    // Priority: 1. Performance-specific prices, 2. Show prices, 3. All active ticket types with default prices
+    let ticketPrices = performance.ticketPrices
+
+    if (!ticketPrices || ticketPrices.length === 0) {
+      // Check if show has ticket prices
+      ticketPrices = performance.show?.showTicketPrices || []
+    }
+
+    if (!ticketPrices || ticketPrices.length === 0) {
+      // Fall back to all active ticket types with default prices
+      const allTicketTypes = await prisma.ticketType.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          defaultPrice: true,
+        },
+        orderBy: { sortOrder: 'asc' },
+      })
+
+      // Convert to the same format as show/performance prices
+      ticketPrices = allTicketTypes.map(tt => ({
+        id: `default-${tt.id}`,
+        price: tt.defaultPrice,
+        notes: null,
+        ticketType: {
+          id: tt.id,
+          name: tt.name,
+          description: tt.description,
+        },
+      }))
+    }
+
     const enrichedPerformance = {
       ...performance,
+      show: {
+        ...performance.show,
+        showTicketPrices: ticketPrices,
+      },
       availability: {
         totalCapacity: performance.maxCapacity,
         availableTickets,

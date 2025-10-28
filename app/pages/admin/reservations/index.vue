@@ -5,21 +5,15 @@
         <h1 class="reservations-management__title">
           Reservations Management
         </h1>
-        <UIButton
-          variant="primary"
-          @click="navigateTo('/admin/reservations/new')"
-        >
-          Create New Reservation
-        </UIButton>
       </div>
     </header>
 
     <div class="reservations-management__content">
       <DataTable
-        api-endpoint="/api/admin/reservations"
+        api-endpoint="/api/foh/reservations"
         :columns="columns"
         :filters="filters"
-        search-placeholder="Search reservations by number, show, or customer..."
+        search-placeholder="Search by reservation code, customer name, or email..."
         empty-message="No reservations found"
         default-sort-by="createdAt"
         default-sort-order="desc"
@@ -30,6 +24,7 @@
             icon="i-lucide-eye"
             color="neutral"
             variant="ghost"
+            size="sm"
             aria-label="View reservation"
             @click="navigateTo(`/admin/reservations/${row.original.id}`)"
           />
@@ -47,47 +42,67 @@ definePageMeta({
   title: 'Reservations Management',
 })
 
+const { formatDateTime } = useFormatters()
+
 // Table configuration
 const columns = [
   {
-    key: 'reservationNumber',
-    label: 'Reservation #',
-    sortable: true,
+    key: 'reservationCode',
+    label: 'Code',
+    sortable: false,
   },
   {
-    key: 'performance.show.title',
-    label: 'Show',
-    sortable: true,
-  },
-  {
-    key: 'performance.date',
-    label: 'Performance Date',
-    sortable: true,
-  },
-  {
-    key: 'user.email',
+    key: 'customerName',
     label: 'Customer',
     sortable: true,
   },
   {
-    key: 'tickets',
-    label: 'Tickets',
+    key: 'customerEmail',
+    label: 'Email',
     sortable: false,
   },
   {
-    key: 'totalAmount',
-    label: 'Total Amount',
+    key: 'performance.show.title',
+    label: 'Show',
+    sortable: false,
+    render: (value: unknown): string => {
+      return value ? String(value) : '-'
+    },
+  },
+  {
+    key: 'performance.startDateTime',
+    label: 'Performance Date',
+    sortable: false,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      return formatDateTime(value as string)
+    },
+  },
+  {
+    key: 'totalPrice',
+    label: 'Total',
     sortable: true,
+    render: (value: unknown): string => {
+      if (!value) return '£0.00'
+      return `£${(Number(value) / 100).toFixed(2)}`
+    },
   },
   {
     key: 'status',
     label: 'Status',
     sortable: true,
+    render: (value: unknown): string => {
+      return String(value || '-').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    },
   },
   {
     key: 'createdAt',
     label: 'Created',
     sortable: true,
+    render: (value: unknown): string => {
+      if (!value) return '-'
+      return formatDateTime(value as string)
+    },
   },
   {
     key: 'actions',
@@ -103,9 +118,31 @@ const filters = [
     label: 'Status',
     type: 'select' as const,
     options: [
-      { value: 'PENDING', label: 'Pending' },
-      { value: 'CONFIRMED', label: 'Confirmed' },
-      { value: 'CANCELLED', label: 'Cancelled' },
+      { value: 'PENDING_COLLECTION', label: 'Pending Collection' },
+      { value: 'COLLECTED', label: 'Collected' },
+      { value: 'PURCHASED_ON_DOOR', label: 'Purchased on Door' },
+      { value: 'CANCELLED_BY_CUSTOMER', label: 'Cancelled by Customer' },
+      { value: 'CANCELLED_BY_ADMIN', label: 'Cancelled by Admin' },
+      { value: 'NO_SHOW', label: 'No Show' },
+      { value: 'EXPIRED', label: 'Expired' },
+    ],
+  },
+  {
+    key: 'upcoming',
+    label: 'Show',
+    type: 'select' as const,
+    options: [
+      { value: 'true', label: 'Upcoming Performances' },
+      { value: 'false', label: 'All Performances' },
+    ],
+  },
+  {
+    key: 'today',
+    label: 'Today',
+    type: 'select' as const,
+    options: [
+      { value: 'true', label: 'Today Only' },
+      { value: 'false', label: 'All Dates' },
     ],
   },
 ]

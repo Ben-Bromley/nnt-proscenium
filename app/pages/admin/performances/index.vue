@@ -21,7 +21,7 @@
         :filters="filters"
         search-placeholder="Search performances by show, venue, or date..."
         empty-message="No performances found"
-        default-sort-by="date"
+        default-sort-by="startDateTime"
         default-sort-order="asc"
         :default-per-page="25"
       >
@@ -51,50 +51,65 @@ definePageMeta({
 // Table configuration
 const columns = [
   {
+    key: 'title',
+    label: 'Title',
+    sortable: true,
+  },
+  {
     key: 'show.title',
     label: 'Show',
-    sortable: true,
+    sortable: false,
+    render: (value: unknown): string => {
+      return value ? String(value) : '-'
+    },
   },
   {
     key: 'venue.name',
     label: 'Venue',
-    sortable: true,
+    sortable: false,
+    render: (value: unknown): string => {
+      return value ? String(value) : '-'
+    },
   },
   {
-    key: 'date',
-    label: 'Date',
+    key: 'startDateTime',
+    label: 'Date & Time',
     sortable: true,
     render: (value: unknown): string => {
       if (!value) return '-'
       const date = new Date(value as string)
-      return date.toLocaleDateString()
+      return date.toLocaleString()
     },
   },
   {
-    key: 'time',
-    label: 'Time',
-    sortable: true,
+    key: 'type',
+    label: 'Type',
+    sortable: false,
+    render: (value: unknown): string => {
+      return String(value || '-').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    },
   },
   {
-    key: 'ticketsSold',
-    label: 'Tickets Sold',
-    sortable: true,
+    key: 'statistics.totalReserved',
+    label: 'Reserved',
+    sortable: false,
     render: (value: unknown): string => {
       return value !== null && value !== undefined ? String(value) : '0'
     },
   },
   {
-    key: 'capacity',
+    key: 'maxCapacity',
     label: 'Capacity',
-    sortable: true,
+    sortable: false,
     render: (value: unknown): string => {
-      return value !== null && value !== undefined ? String(value) : '-'
+      if (!value) return '-'
+      return Number(value) === -1 ? 'Unlimited' : String(value)
     },
   },
   {
     key: 'status',
     label: 'Status',
-    sortable: true,
+    sortable: false,
     render: (value: unknown): string => {
       return String(value || '-').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     },
@@ -113,9 +128,22 @@ const filters = [
     label: 'Status',
     type: 'select' as const,
     options: [
-      { value: 'scheduled', label: 'Scheduled' },
-      { value: 'completed', label: 'Completed' },
-      { value: 'cancelled', label: 'Cancelled' },
+      { value: 'SCHEDULED', label: 'Scheduled' },
+      { value: 'ON_SALE', label: 'On Sale' },
+      { value: 'RESTRICTED', label: 'Restricted' },
+      { value: 'CLOSED', label: 'Closed' },
+      { value: 'SOLD_OUT', label: 'Sold Out' },
+      { value: 'CANCELLED', label: 'Cancelled' },
+      { value: 'PAST', label: 'Past' },
+    ],
+  },
+  {
+    key: 'upcomingOnly',
+    label: 'Show Only',
+    type: 'select' as const,
+    options: [
+      { value: 'true', label: 'Upcoming Only' },
+      { value: 'false', label: 'All Performances' },
     ],
   },
 ]
