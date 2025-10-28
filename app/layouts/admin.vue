@@ -28,7 +28,7 @@
       <template #default="{ collapsed }">
         <UNavigationMenu
           :collapsed="collapsed"
-          :items="adminNavigation"
+          :items="navigation"
           orientation="vertical"
         />
       </template>
@@ -68,7 +68,8 @@
 </template>
 
 <script setup lang="ts">
-import type { NavigationMenuItem } from '@nuxt/ui'
+// Get role-based navigation
+const { navigation } = useAdminNavigation()
 
 // Get page title from route meta or generate from path
 const route = useRoute()
@@ -95,70 +96,4 @@ const pageTitle = computed(() => {
 
   return 'Admin'
 })
-
-// Admin navigation items based on the existing admin sections
-const adminNavigation: NavigationMenuItem[][] = [[
-  {
-    label: 'Dashboard',
-    icon: 'i-heroicons-home',
-    to: '/admin',
-    exact: true,
-  },
-  {
-    label: 'User Management',
-    icon: 'i-heroicons-user-group',
-    to: '/admin/users',
-  },
-  {
-    label: 'Venues',
-    icon: 'i-heroicons-building-office',
-    to: '/admin/venues',
-  },
-  {
-    label: 'Shows',
-    icon: 'i-heroicons-squares-2x2',
-    to: '/admin/shows',
-    children: [
-      {
-        label: 'All Shows',
-        to: '/admin/shows',
-      },
-      {
-        label: 'Performances',
-        to: '/admin/performances',
-      },
-    ],
-  },
-  {
-    label: 'Ticketing',
-    icon: 'i-heroicons-ticket',
-    to: '/admin/tickets',
-    children: [
-      {
-        label: 'Tickets',
-        to: '/admin/tickets',
-      },
-      {
-        label: 'Reservations',
-        to: '/admin/reservations',
-      },
-    ],
-  },
-], [
-  {
-    label: 'Content Warnings',
-    icon: 'i-heroicons-exclamation-triangle',
-    to: '/admin/content-warnings',
-  },
-  {
-    label: 'Festivals',
-    icon: 'i-heroicons-calendar-days',
-    to: '/admin/festivals',
-  },
-  {
-    label: 'Front of House',
-    icon: 'i-heroicons-users',
-    to: '/admin/foh',
-  },
-]]
 </script>

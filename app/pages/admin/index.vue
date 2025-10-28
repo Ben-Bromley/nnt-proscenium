@@ -190,7 +190,7 @@
 
 <script setup lang="ts">
 definePageMeta({
-  middleware: 'admin',
+  middleware: ['admin', 'role-redirect'],
   layout: 'admin',
 })
 
