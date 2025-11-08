@@ -77,9 +77,12 @@ export default defineEventHandler(async (event) => {
     }
 
     // Update show in transaction to handle related data
-    await prisma.$transaction(async (tx) => {
-      // Update basic show information
-      await tx.show.update({
+    // Build array of operations for batch transaction (D1 compatible)
+    const operations = []
+
+    // Update basic show information
+    operations.push(
+      prisma.show.update({
         where: { id: showId },
         data: {
           ...(title && { title }),
@@ -90,37 +93,45 @@ export default defineEventHandler(async (event) => {
           ...(posterImageUrl !== undefined && { posterImageUrl }),
           ...(trailerVideoUrl !== undefined && { trailerVideoUrl }),
         },
-      })
+      }),
+    )
 
-      // Handle content warnings if provided
-      if (contentWarnings !== undefined) {
-        // Remove existing content warnings
-        await tx.showContentWarning.deleteMany({
+    // Handle content warnings if provided
+    if (contentWarnings !== undefined) {
+      // Remove existing content warnings
+      operations.push(
+        prisma.showContentWarning.deleteMany({
           where: { showId },
-        })
+        }),
+      )
 
-        // Add new content warnings
-        if (contentWarnings.length > 0) {
-          await tx.showContentWarning.createMany({
+      // Add new content warnings
+      if (contentWarnings.length > 0) {
+        operations.push(
+          prisma.showContentWarning.createMany({
             data: contentWarnings.map((warning: { contentWarningId: string, notes?: string }) => ({
               showId,
               contentWarningId: warning.contentWarningId,
               notes: warning.notes,
             })),
-          })
-        }
+          }),
+        )
       }
+    }
 
-      // Handle ticket pricing if provided
-      if (ticketPricing !== undefined) {
-        // Remove existing ticket prices
-        await tx.showTicketPrice.deleteMany({
+    // Handle ticket pricing if provided
+    if (ticketPricing !== undefined) {
+      // Remove existing ticket prices
+      operations.push(
+        prisma.showTicketPrice.deleteMany({
           where: { showId },
-        })
+        }),
+      )
 
-        // Add new ticket prices
-        if (ticketPricing.length > 0) {
-          await tx.showTicketPrice.createMany({
+      // Add new ticket prices
+      if (ticketPricing.length > 0) {
+        operations.push(
+          prisma.showTicketPrice.createMany({
             data: ticketPricing.map((pricing: { ticketTypeId: string, price: number, isActive?: boolean, notes?: string }) => ({
               showId,
               ticketTypeId: pricing.ticketTypeId,
@@ -128,10 +139,13 @@ export default defineEventHandler(async (event) => {
               isActive: pricing.isActive ?? true,
               notes: pricing.notes,
             })),
-          })
-        }
+          }),
+        )
       }
-    })
+    }
+
+    // Execute all operations in a batch transaction
+    await prisma.$transaction(operations)
 
     // Fetch the updated show with all relationships
     const showWithDetails = await prisma.show.findUnique({

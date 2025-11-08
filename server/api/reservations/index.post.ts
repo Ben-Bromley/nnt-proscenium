@@ -141,140 +141,127 @@ export default defineEventHandler(async (event) => {
     // Generate reservation code
     const reservationCode = Math.random().toString(36).substring(2, 8).toUpperCase()
 
-    // Calculate total price and create reservation with tickets
-    const reservation = await prisma.$transaction(async (tx) => {
-      let calculatedTotalPrice = 0
+    // Pre-calculate prices and gather ticket data (outside transaction for D1 compatibility)
+    let calculatedTotalPrice = 0
+    const ticketDataForCreation: Array<{
+      ticketTypeId: string
+      quantity: number
+      price: number
+      name: string
+      showTicketPriceId: string | null
+      performanceTicketPriceId: string | null
+    }> = []
 
-      // Pre-calculate total price using proper price hierarchy
-      for (const ticketRequest of body.tickets) {
-        // Priority: 1. Performance-specific price, 2. Show-specific price, 3. Default price
-        const performancePrice = await tx.performanceTicketPrice.findUnique({
-          where: {
-            performanceId_ticketTypeId: {
-              performanceId: body.performanceId,
-              ticketTypeId: ticketRequest.ticketTypeId,
-            },
-            isActive: true,
+    // Lookup prices for each ticket type
+    for (const ticketRequest of body.tickets) {
+      // Priority: 1. Performance-specific price, 2. Show-specific price, 3. Default price
+      const performancePrice = await prisma.performanceTicketPrice.findUnique({
+        where: {
+          performanceId_ticketTypeId: {
+            performanceId: body.performanceId,
+            ticketTypeId: ticketRequest.ticketTypeId,
           },
-          select: { price: true },
-        })
-
-        let ticketPrice = performancePrice?.price
-
-        if (!ticketPrice) {
-          const showPrice = await tx.showTicketPrice.findUnique({
-            where: {
-              showId_ticketTypeId: {
-                showId: performance.show!.id,
-                ticketTypeId: ticketRequest.ticketTypeId,
-              },
-              isActive: true,
-            },
-            select: { price: true },
-          })
-          ticketPrice = showPrice?.price
-        }
-
-        if (!ticketPrice) {
-          const ticketType = await tx.ticketType.findUnique({
-            where: { id: ticketRequest.ticketTypeId },
-            select: { defaultPrice: true },
-          })
-          ticketPrice = ticketType?.defaultPrice
-        }
-
-        if (!ticketPrice) {
-          throw new Error(`Ticket type not found or has no price: ${ticketRequest.ticketTypeId}`)
-        }
-
-        calculatedTotalPrice += ticketPrice * ticketRequest.quantity
-      }
-
-      // Create reservation
-      const newReservation = await tx.reservation.create({
-        data: {
-          performanceId: body.performanceId,
-          customerName: body.customerName,
-          customerEmail: body.customerEmail,
-          customerPhone: body.customerPhone,
-          notes: body.notes,
-          reservationCode,
-          totalPrice: calculatedTotalPrice,
-          status: 'PENDING_COLLECTION',
+          isActive: true,
         },
-        select: {
-          id: true,
-          reservationCode: true,
-          customerName: true,
-          customerEmail: true,
-          totalPrice: true,
-          status: true,
-          createdAt: true,
-        },
+        select: { price: true, id: true },
       })
 
-      // Create reserved tickets with proper price lookup
-      for (const ticketRequest of body.tickets) {
-        // Get ticket type info
-        const ticketType = await tx.ticketType.findUnique({
-          where: { id: ticketRequest.ticketTypeId },
-          select: { name: true, defaultPrice: true },
-        })
+      let ticketPrice = performancePrice?.price
+      let showTicketPriceId = null
+      const performanceTicketPriceId = performancePrice?.id || null
 
-        if (!ticketType) {
-          throw new Error(`Ticket type not found: ${ticketRequest.ticketTypeId}`)
-        }
-
-        // Find the actual price used (same hierarchy as above)
-        const performancePrice = await tx.performanceTicketPrice.findUnique({
+      if (!ticketPrice) {
+        const showPrice = await prisma.showTicketPrice.findUnique({
           where: {
-            performanceId_ticketTypeId: {
-              performanceId: body.performanceId,
+            showId_ticketTypeId: {
+              showId: performance.show!.id,
               ticketTypeId: ticketRequest.ticketTypeId,
             },
             isActive: true,
           },
           select: { price: true, id: true },
         })
+        ticketPrice = showPrice?.price
+        showTicketPriceId = showPrice?.id || null
+      }
 
-        let actualPrice = performancePrice?.price
-        let showTicketPriceId = null
-        const performanceTicketPriceId = performancePrice?.id || null
+      // Get ticket type info
+      const ticketType = await prisma.ticketType.findUnique({
+        where: { id: ticketRequest.ticketTypeId },
+        select: { name: true, defaultPrice: true },
+      })
 
-        if (!actualPrice) {
-          const showPrice = await tx.showTicketPrice.findUnique({
-            where: {
-              showId_ticketTypeId: {
-                showId: performance.show!.id,
-                ticketTypeId: ticketRequest.ticketTypeId,
-              },
-              isActive: true,
-            },
-            select: { price: true, id: true },
-          })
-          actualPrice = showPrice?.price
-          showTicketPriceId = showPrice?.id || null
-        }
-
-        if (!actualPrice) {
-          actualPrice = ticketType.defaultPrice
-        }
-
-        await tx.reservedTicket.create({
-          data: {
-            reservationId: newReservation.id,
-            ticketTypeId: ticketRequest.ticketTypeId,
-            quantity: ticketRequest.quantity,
-            pricePerItemAtReservation: actualPrice,
-            ticketTypeNameAtReservation: ticketType.name,
-            showTicketPriceId,
-            performanceTicketPriceId,
-          },
+      if (!ticketType) {
+        throw createError({
+          statusCode: 404,
+          statusMessage: `Ticket type not found: ${ticketRequest.ticketTypeId}`,
         })
       }
 
-      return newReservation
+      if (!ticketPrice) {
+        ticketPrice = ticketType.defaultPrice
+      }
+
+      if (!ticketPrice) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: `Ticket type has no price configured: ${ticketRequest.ticketTypeId}`,
+        })
+      }
+
+      calculatedTotalPrice += ticketPrice * ticketRequest.quantity
+
+      ticketDataForCreation.push({
+        ticketTypeId: ticketRequest.ticketTypeId,
+        quantity: ticketRequest.quantity,
+        price: ticketPrice,
+        name: ticketType.name,
+        showTicketPriceId,
+        performanceTicketPriceId,
+      })
+    }
+
+    // Create reservation first
+    const newReservation = await prisma.reservation.create({
+      data: {
+        performanceId: body.performanceId,
+        customerName: body.customerName,
+        customerEmail: body.customerEmail,
+        customerPhone: body.customerPhone,
+        notes: body.notes,
+        reservationCode,
+        totalPrice: calculatedTotalPrice,
+        status: 'PENDING_COLLECTION',
+      },
+      select: {
+        id: true,
+        reservationCode: true,
+        customerName: true,
+        customerEmail: true,
+        totalPrice: true,
+        status: true,
+        createdAt: true,
+      },
     })
+
+    // Create all reserved tickets in a batch transaction
+    const ticketOperations = ticketDataForCreation.map(ticketData =>
+      prisma.reservedTicket.create({
+        data: {
+          reservationId: newReservation.id,
+          ticketTypeId: ticketData.ticketTypeId,
+          quantity: ticketData.quantity,
+          pricePerItemAtReservation: ticketData.price,
+          ticketTypeNameAtReservation: ticketData.name,
+          showTicketPriceId: ticketData.showTicketPriceId,
+          performanceTicketPriceId: ticketData.performanceTicketPriceId,
+        },
+      }),
+    )
+
+    await prisma.$transaction(ticketOperations)
+
+    const reservation = newReservation
 
     // Fetch the complete reservation with ticket details for email
     const completeReservation = await prisma.reservation.findUnique({
