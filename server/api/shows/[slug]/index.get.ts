@@ -138,7 +138,37 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    return successResponse(show)
+    // Enrich performances with accurate ticket counts
+    // For each performance, calculate the total reserved tickets (sum of quantities from non-cancelled reservations)
+    const enrichedPerformances = await Promise.all(
+      show.performances.map(async (performance) => {
+        const reservedTickets = await prisma.reservedTicket.aggregate({
+          where: {
+            reservation: {
+              performanceId: performance.id,
+              status: { notIn: ['CANCELLED_BY_CUSTOMER', 'CANCELLED_BY_ADMIN'] },
+            },
+          },
+          _sum: { quantity: true },
+        })
+
+        const totalReserved = reservedTickets._sum.quantity ?? 0
+
+        return {
+          ...performance,
+          _count: {
+            reservations: totalReserved, // Total tickets reserved (not reservation count, but ticket quantity)
+          },
+        }
+      }),
+    )
+
+    const enrichedShow = {
+      ...show,
+      performances: enrichedPerformances,
+    }
+
+    return successResponse(enrichedShow)
   }
   catch (error) {
     return handleApiError(error)

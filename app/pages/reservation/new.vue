@@ -266,8 +266,11 @@ interface Performance {
   venue?: {
     name: string
   }
-  _count?: {
-    reservations: number
+  availability?: {
+    totalCapacity: number
+    availableTickets: number
+    reservedCount: number
+    isAvailable: boolean
   }
 }
 
@@ -329,8 +332,8 @@ onMounted(() => {
 const availableSeats = computed(() => {
   if (!performance.value)
     return 0
-  const reserved = performance.value._count?.reservations || 0
-  return Math.max(0, performance.value.maxCapacity - reserved)
+  // Use the availability data that the API already provides
+  return performance.value.availability?.availableTickets || 0
 })
 
 const totalTickets = computed(() => {
