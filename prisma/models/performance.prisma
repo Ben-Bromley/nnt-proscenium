@@ -8,7 +8,7 @@ model Performance {
   details                 String? // Additional details about the performance (or the event description)
   status                  PerformanceBookingStatus @default(SCHEDULED)
   maxCapacity             Int // Specific capacity for this performance (might differ from Venue.capacity due to staging, etc.) // Can be set to -1 for unlimited capacity
-  reservationsOpen        Boolean                  @default(true)
+  reservationsOpen        Boolean                  @default(true) // TODO: Deprecate this field in favour of status
   reservationInstructions String? // Special instructions for booking this performance
   externalBookingLink     String? // URL for booking via an external platform e.g. SU Website
 

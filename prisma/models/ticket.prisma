@@ -1,8 +1,8 @@
 model TicketType {
   id           String  @id @default(nanoid())
-  name         String  @unique // e.g., "Adult", "Child", "Concession", "Member Early Bird"
+  name         String  @unique // e.g., "Adult", "Child", "Concession", "Member", etc.
   description  String?
-  defaultPrice Float // Default price in GBP (or your theatre's currency)
+  defaultPrice Float // Default price in GBP
   sortOrder    Int? // For display order in lists
 
   createdAt DateTime @default(now())

@@ -6,7 +6,7 @@ model Show {
   status         ShowStatus @default(DRAFT)
   showType       ShowType // e.g., IN_HOUSE, STUDIO, FESTIVAL
   posterImageUrl String?
-  programmeUrl   String? // URL to a PDF or webpage with the show programme
+  programmeUrl   String? // URL to a PDF or webpage with the show programme TODO: Maybe store as a File model later - S3 upload?
   ageRating      String? // e.g., "12A", "18+", etc.
 
   // Metadata
