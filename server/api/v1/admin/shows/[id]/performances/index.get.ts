@@ -4,7 +4,7 @@
  * Retrieves all performances for a specific show.
  * Requires admin authentication.
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 export default defineEventHandler(async (event) => {
   try {

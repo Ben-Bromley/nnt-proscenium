@@ -1,4 +1,4 @@
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 import type { MembershipType, RoleType, Prisma } from '@prisma/client'
 
 /**

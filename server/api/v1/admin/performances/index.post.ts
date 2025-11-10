@@ -59,7 +59,7 @@
  * - 409: Venue scheduling conflict
  * - 500: Internal server error
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 export default defineEventHandler(async (event) => {
   try {

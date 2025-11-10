@@ -55,7 +55,7 @@
  * - 409: Requested tickets no longer available
  * - 500: Internal server error
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 import { sendReservationConfirmationEmail } from '~~/server/utils/email'
 
 export default defineEventHandler(async (event) => {

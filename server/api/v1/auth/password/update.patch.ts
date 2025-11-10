@@ -1,4 +1,4 @@
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 /**
  * PATCH /api/v1/auth/password/update

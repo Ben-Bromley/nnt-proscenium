@@ -48,7 +48,7 @@
  * - 409: Content warning is in use and cannot be deleted without force
  * - 500: Internal server error
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 export default defineEventHandler(async (event) => {
   try {
