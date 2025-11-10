@@ -1,4 +1,4 @@
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 /**
  * GET /api/v1/venue-features

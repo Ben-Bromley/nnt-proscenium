@@ -69,7 +69,7 @@
  * - 403: Insufficient permissions (FOH access required)
  * - 500: Internal server error
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 import { reservationWithRelationsSelectQuery } from '~~/server/utils/database/reservation'
 
 export default defineEventHandler(async (event) => {

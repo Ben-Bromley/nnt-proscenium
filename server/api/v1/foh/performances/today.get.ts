@@ -53,7 +53,7 @@
  * - 403: Insufficient permissions (FOH access required)
  * - 500: Internal server error
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 export default defineEventHandler(async (event) => {
   try {

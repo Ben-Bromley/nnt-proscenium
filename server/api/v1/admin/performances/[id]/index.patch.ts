@@ -4,7 +4,7 @@
  * Updates a performance by ID.
  * Requires admin authentication.
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 export default defineEventHandler(async (event) => {
   try {

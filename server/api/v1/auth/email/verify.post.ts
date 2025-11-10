@@ -1,4 +1,4 @@
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 /**
  * POST /api/v1/auth/email/verify
