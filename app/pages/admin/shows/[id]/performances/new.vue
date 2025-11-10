@@ -249,11 +249,11 @@ const route = useRoute()
 const showId = route.params.id as string
 
 // Fetch show data
-const { data: showResponse, pending: showPending, error: showError } = await useFetch(`/api/admin/shows/${showId}`)
+const { data: showResponse, pending: showPending, error: showError } = await useFetch(`/api/v1/admin/shows/${showId}`)
 const show = computed(() => showResponse.value?.data)
 
 // Fetch venues
-const { data: venuesResponse, pending: venuesLoading } = await useFetch('/api/admin/venues', {
+const { data: venuesResponse, pending: venuesLoading } = await useFetch('/api/v1/admin/venues', {
   query: { isActive: 'true', limit: 100 },
 })
 
@@ -362,7 +362,7 @@ async function handleSubmit() {
       venueId: formData.venueId || undefined,
     }
 
-    await $fetch(`/api/admin/shows/${showId}/performances`, {
+    await $fetch(`/api/v1/admin/shows/${showId}/performances`, {
       method: 'POST',
       body: performanceData,
     })

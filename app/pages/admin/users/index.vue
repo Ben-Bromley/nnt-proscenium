@@ -6,7 +6,7 @@
 
     <DataTable
       ref="dataTable"
-      api-endpoint="/api/admin/users"
+      api-endpoint="/api/v1/admin/users"
       :columns="columns"
       :filters="filters"
       search-placeholder="Search users by email, name, or student ID..."
@@ -165,7 +165,7 @@ async function handleBulkDelete(selectedRows: (UserRow | undefined)[], clearSele
     // TODO: Implement bulk delete API call
     // Example:
     // const userIds = validRows.map(user => user.id)
-    // await $fetch('/api/admin/users/bulk-delete', {
+    // await $fetch('/api/v1/admin/users/bulk-delete', {
     //   method: 'POST',
     //   body: { userIds }
     // })

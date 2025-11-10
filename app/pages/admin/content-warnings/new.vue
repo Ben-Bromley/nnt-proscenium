@@ -86,7 +86,7 @@ definePageMeta({
 const handleFormSubmit = async (data: Record<string, unknown>) => {
   try {
     const formData = data as { name: string, description?: string, isActive: boolean }
-    const response = await $fetch('/api/admin/content-warnings', {
+    const response = await $fetch('/api/v1/admin/content-warnings', {
       method: 'POST',
       body: {
         name: formData.name.trim(),

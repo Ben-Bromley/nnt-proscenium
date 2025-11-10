@@ -388,7 +388,7 @@ definePageMeta({
 const route = useRoute()
 const showId = route.params.id as string
 
-const { data: response, pending, error } = await useFetch(`/api/admin/shows/${showId}`)
+const { data: response, pending, error } = await useFetch(`/api/v1/admin/shows/${showId}`)
 
 const show = computed(() => response.value?.data)
 

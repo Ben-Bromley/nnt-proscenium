@@ -27,7 +27,7 @@ export const useAuth = () => {
       pending.value = true
       error.value = null
 
-      const response = await $fetch('/api/auth/login', {
+      const response = await $fetch('/api/v1/auth/login', {
         method: 'POST',
         body: credentials,
       })
@@ -63,7 +63,7 @@ export const useAuth = () => {
       pending.value = true
       error.value = null
 
-      const result = await $fetch('/api/auth/register', {
+      const result = await $fetch('/api/v1/auth/register', {
         method: 'POST',
         body: credentials,
       })
@@ -97,7 +97,7 @@ export const useAuth = () => {
       pending.value = true
       error.value = null
 
-      await $fetch('/api/auth/logout', {
+      await $fetch('/api/v1/auth/logout', {
         method: 'POST',
       })
 

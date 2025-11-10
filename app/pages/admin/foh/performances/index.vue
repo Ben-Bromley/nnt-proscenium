@@ -223,7 +223,7 @@ definePageMeta({
 
 // Fetch today's performances
 const { data, pending, error: fetchError } = await useFetch(
-  '/api/foh/performances/today',
+  '/api/v1/foh/performances/today',
   {
     key: 'foh-performances-today',
   },

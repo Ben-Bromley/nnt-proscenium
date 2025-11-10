@@ -138,7 +138,7 @@ async function verifyEmail() {
     error.value = null
 
     // Call email verification API endpoint
-    await $fetch('/api/auth/email/verify', {
+    await $fetch('/api/v1/auth/email/verify', {
       method: 'POST',
       body: { token: token.value },
     })

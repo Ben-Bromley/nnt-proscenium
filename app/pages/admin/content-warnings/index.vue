@@ -16,7 +16,7 @@
 
     <DataTable
       ref="dataTable"
-      api-endpoint="/api/admin/content-warnings"
+      api-endpoint="/api/v1/admin/content-warnings"
       :columns="columns"
       :filters="filters"
       search-placeholder="Search content warnings by name or description..."

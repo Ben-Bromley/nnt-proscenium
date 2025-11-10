@@ -278,7 +278,7 @@ interface ApiResponse {
   data: TicketTypeDetail
 }
 
-const { data: response, pending, error } = await useFetch<ApiResponse>(`/api/admin/tickets/${ticketTypeId}`)
+const { data: response, pending, error } = await useFetch<ApiResponse>(`/api/v1/admin/tickets/${ticketTypeId}`)
 
 // Extract ticket type from response
 const ticketType = computed(() => response.value?.data)
@@ -299,7 +299,7 @@ const handleDelete = async () => {
 
   deleting.value = true
   try {
-    await $fetch(`/api/admin/tickets/${ticketTypeId}`, {
+    await $fetch(`/api/v1/admin/tickets/${ticketTypeId}`, {
       method: 'DELETE',
     })
 

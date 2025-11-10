@@ -16,7 +16,7 @@
 
     <DataTable
       ref="dataTable"
-      api-endpoint="/api/admin/tickets"
+      api-endpoint="/api/v1/admin/tickets"
       :columns="columns"
       :filters="filters"
       search-placeholder="Search ticket types by name, description, or price..."

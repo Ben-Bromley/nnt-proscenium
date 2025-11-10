@@ -24,7 +24,7 @@
 
     <div class="foh-reservations__content">
       <DataTable
-        api-endpoint="/api/foh/reservations"
+        api-endpoint="/api/v1/foh/reservations"
         :columns="columns"
         :filters="filters"
         :default-filters="{ today: 'true' }"
@@ -301,7 +301,7 @@ async function confirmCollectPayment() {
 
   try {
     const { error: updateError } = await useFetch(
-      `/api/foh/reservations/${selectedReservation.value.id}/collect`,
+      `/api/v1/foh/reservations/${selectedReservation.value.id}/collect`,
       {
         method: 'POST',
       },
@@ -312,7 +312,7 @@ async function confirmCollectPayment() {
     }
     else {
       // Refresh the table data
-      await refreshNuxtData('datatable-/api/foh/reservations')
+      await refreshNuxtData('datatable-/api/v1/foh/reservations')
       closeCollectModal()
     }
   }

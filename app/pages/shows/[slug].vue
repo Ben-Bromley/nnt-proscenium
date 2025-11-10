@@ -258,7 +258,7 @@ definePageMeta({
 
 // Fetch show data
 const { data: showData, pending, error: fetchError } = await useFetch(
-  `/api/shows/${slug}`,
+  `/api/v1/shows/${slug}`,
 )
 
 const error = ref<string | null>(null)

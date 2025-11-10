@@ -248,7 +248,7 @@
 </template>
 
 <script setup>
-const { data: events, pending, error } = await useFetch('/api/calendar')
+const { data: events, pending, error } = await useFetch('/api/v1/calendar')
 
 const toast = useToast()
 

@@ -248,11 +248,11 @@ const route = useRoute()
 const performanceId = route.params.id as string
 
 // Fetch performance data
-const { data: response, pending, error } = await useFetch(`/api/admin/performances/${performanceId}`)
+const { data: response, pending, error } = await useFetch(`/api/v1/admin/performances/${performanceId}`)
 const performance = computed(() => response.value?.data)
 
 // Fetch venues
-const { data: venuesResponse, pending: venuesLoading } = await useFetch('/api/admin/venues', {
+const { data: venuesResponse, pending: venuesLoading } = await useFetch('/api/v1/admin/venues', {
   query: { isActive: 'true', limit: 100 },
 })
 
@@ -375,7 +375,7 @@ async function handleSubmit() {
       venueId: formData.venueId || undefined,
     }
 
-    await $fetch(`/api/admin/performances/${performanceId}`, {
+    await $fetch(`/api/v1/admin/performances/${performanceId}`, {
       method: 'PATCH',
       body: updateData,
     })

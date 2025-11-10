@@ -295,7 +295,7 @@ async function loadPerformance() {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await useFetch(`/api/performances/${performanceId}`)
+    const { data, error: fetchError } = await useFetch(`/api/v1/performances/${performanceId}`)
 
     if (fetchError.value) {
       throw new Error(fetchError.value.statusMessage || 'Failed to load performance')
@@ -409,7 +409,7 @@ async function handleSubmit() {
       tickets,
     }
 
-    const { data, error: submitError } = await useFetch('/api/reservations', {
+    const { data, error: submitError } = await useFetch('/api/v1/reservations', {
       method: 'POST',
       body: payload,
     })

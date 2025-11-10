@@ -360,7 +360,7 @@ const { formatDateTime } = useFormatters()
 
 // Fetch reservation details
 const { data: reservation, pending, error: fetchError } = await useFetch(
-  `/api/foh/reservations/${route.params.id}`,
+  `/api/v1/foh/reservations/${route.params.id}`,
   {
     key: `reservation-${route.params.id}`,
   },
@@ -417,7 +417,7 @@ async function collectPayment() {
 
   try {
     const { data, error: updateError } = await useFetch(
-      `/api/foh/reservations/${reservation.value.id}/collect`,
+      `/api/v1/foh/reservations/${reservation.value.id}/collect`,
       {
         method: 'POST',
       },
@@ -446,7 +446,7 @@ async function cancelReservation() {
 
   try {
     const { data, error: updateError } = await useFetch(
-      `/api/foh/reservations/${reservation.value.id}`,
+      `/api/v1/foh/reservations/${reservation.value.id}`,
       {
         method: 'PATCH',
         body: {
@@ -477,7 +477,7 @@ async function markNoShow() {
 
   try {
     const { data, error: updateError } = await useFetch(
-      `/api/foh/reservations/${reservation.value.id}`,
+      `/api/v1/foh/reservations/${reservation.value.id}`,
       {
         method: 'PATCH',
         body: {
