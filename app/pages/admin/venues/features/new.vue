@@ -106,7 +106,7 @@ const handleFormSubmit = async (values: typeof defaultFormData) => {
 
   console.log('Sending API create with data:', createData)
 
-  const response = await $fetch<{ success: boolean, data: { feature: { id: string } } }>('/api/admin/venue-features', {
+  const response = await $fetch<{ success: boolean, data: { feature: { id: string } } }>('/api/v1/admin/venue-features', {
     method: 'POST',
     body: createData,
   })

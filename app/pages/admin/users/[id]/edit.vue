@@ -265,7 +265,7 @@ const membershipOptions = [
 ]
 
 // Fetch user data
-const { data: response, pending, error: fetchError } = await useFetch<UserResponse>(`/api/admin/users/${userId}`)
+const { data: response, pending, error: fetchError } = await useFetch<UserResponse>(`/api/v1/admin/users/${userId}`)
 
 // Extract user from response
 const user = computed(() => response.value?.data?.user)
@@ -336,7 +336,7 @@ const handleFormSubmit = async (_values: typeof defaultFormData, changedValues?:
     }
   })
 
-  await $fetch(`/api/admin/users/${userId}`, {
+  await $fetch(`/api/v1/admin/users/${userId}`, {
     method: 'PATCH',
     body: updateData,
   })

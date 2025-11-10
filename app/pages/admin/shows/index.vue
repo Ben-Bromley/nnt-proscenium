@@ -17,7 +17,7 @@
     <div class="shows-management__content">
       <DataTable
         ref="dataTable"
-        api-endpoint="/api/admin/shows"
+        api-endpoint="/api/v1/admin/shows"
         :columns="columns"
         :filters="filters"
         search-placeholder="Search shows by title or description..."

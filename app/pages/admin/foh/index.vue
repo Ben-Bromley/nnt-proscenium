@@ -315,7 +315,7 @@ const { formatDateTime } = useFormatters()
 
 // Fetch dashboard data
 const { data: dashboard, pending, error: fetchError } = await useFetch(
-  '/api/foh/dashboard',
+  '/api/v1/foh/dashboard',
   {
     key: 'foh-dashboard',
   },

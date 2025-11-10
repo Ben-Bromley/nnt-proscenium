@@ -170,7 +170,7 @@ definePageMeta({
 const currentYear = new Date().getFullYear()
 
 // Load existing user data
-const { data: userData } = await useFetch('/api/account')
+const { data: userData } = await useFetch('/api/v1/account')
 
 // Membership options
 const membershipOptions = [
@@ -186,7 +186,7 @@ const form = useForm({
   initialValues: userData.value?.data?.user || {},
   onSubmit: async (_values, changedValues) => {
     try {
-      await $fetch('/api/users/me?setup=true', {
+      await $fetch('/api/v1/users/me?setup=true', {
         method: 'PATCH',
         body: changedValues,
       })

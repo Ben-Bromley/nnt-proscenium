@@ -199,7 +199,7 @@ const route = useRoute()
 const userId = route.params.id as string
 
 // Fetch user data
-const { data: response, pending, error } = await useFetch<UserResponse>(`/api/admin/users/${userId}`)
+const { data: response, pending, error } = await useFetch<UserResponse>(`/api/v1/admin/users/${userId}`)
 
 // Extract user from response
 const user = computed(() => response.value?.data?.user)
@@ -211,7 +211,7 @@ const sendPasswordReset = async () => {
 
   sendingPasswordReset.value = true
   try {
-    await $fetch('/api/auth/password/reset', {
+    await $fetch('/api/v1/auth/password/reset', {
       method: 'POST',
       body: {
         email: user.value.email,

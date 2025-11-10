@@ -352,7 +352,7 @@ definePageMeta({
 })
 
 // Fetch venues
-const { data: venuesResponse, pending: venuesLoading, error: venuesError } = await useFetch('/api/admin/venues', {
+const { data: venuesResponse, pending: venuesLoading, error: venuesError } = await useFetch('/api/v1/admin/venues', {
   query: { isActive: 'true', limit: 100 },
 })
 
@@ -516,7 +516,7 @@ async function handleSubmit() {
     }
 
     // Create the show first
-    const response = await $fetch<{ success: boolean, data: { id: string } }>('/api/admin/shows', {
+    const response = await $fetch<{ success: boolean, data: { id: string } }>('/api/v1/admin/shows', {
       method: 'POST',
       body: showData,
     })
@@ -527,7 +527,7 @@ async function handleSubmit() {
     if (performances.value.length > 0) {
       await Promise.all(
         performances.value.map(perf =>
-          $fetch(`/api/admin/shows/${showId}/performances`, {
+          $fetch(`/api/v1/admin/shows/${showId}/performances`, {
             method: 'POST',
             body: {
               title: perf.title,

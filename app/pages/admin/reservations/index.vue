@@ -10,7 +10,7 @@
 
     <div class="reservations-management__content">
       <DataTable
-        api-endpoint="/api/foh/reservations"
+        api-endpoint="/api/v1/foh/reservations"
         :columns="columns"
         :filters="filters"
         search-placeholder="Search by reservation code, customer name, or email..."

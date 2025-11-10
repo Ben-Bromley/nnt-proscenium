@@ -239,7 +239,7 @@ async function loadReservation() {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await useFetch(`/api/reservations/${reservationCode}`)
+    const { data, error: fetchError } = await useFetch(`/api/v1/reservations/${reservationCode}`)
 
     if (fetchError.value) {
       throw new Error(fetchError.value.statusMessage || 'Failed to load reservation')

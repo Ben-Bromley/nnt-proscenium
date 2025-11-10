@@ -248,7 +248,7 @@ useSeoMeta({
 const { data: showsData, status: showsStatus } = await useFetch<{
   success: boolean
   data: ShowWithPerformances[]
-}>('/api/shows', {
+}>('/api/v1/shows', {
   query: {
     includeUpcoming: 'true',
     includePast: 'false',

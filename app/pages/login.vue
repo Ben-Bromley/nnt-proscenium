@@ -195,7 +195,7 @@ async function resendVerificationEmail() {
     }
 
     // Call resend verification endpoint
-    await $fetch('/api/auth/email/resend', {
+    await $fetch('/api/v1/auth/email/resend', {
       method: 'POST',
       body: { email },
     })

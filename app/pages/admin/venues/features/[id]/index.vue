@@ -182,7 +182,7 @@
 </template>
 
 <script setup lang="ts">
-import type { VenueFeatureResponse } from '~~/shared/types/api'
+import type { VenueFeatureResponse } from '~~/shared/types/api/v1'
 
 // Require admin access
 definePageMeta({
@@ -196,7 +196,7 @@ const route = useRoute()
 const featureId = computed(() => route.params.id as string)
 
 // Fetch feature data
-const { data: featureResponse, pending, error } = await useFetch<VenueFeatureResponse>(`/api/admin/venue-features/${featureId.value}`)
+const { data: featureResponse, pending, error } = await useFetch<VenueFeatureResponse>(`/api/v1/admin/venue-features/${featureId.value}`)
 
 // Extract feature from the response
 const feature = computed(() => featureResponse.value?.data?.feature)
@@ -234,7 +234,7 @@ const handleDeleteFeature = async () => {
   isDeleting.value = true
 
   try {
-    await $fetch(`/api/admin/venue-features/${featureId.value}`, {
+    await $fetch(`/api/v1/admin/venue-features/${featureId.value}`, {
       method: 'DELETE',
     })
 

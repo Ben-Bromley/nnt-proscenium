@@ -139,7 +139,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     }
 
     // Call reset password API endpoint
-    await $fetch('/api/auth/password/reset', {
+    await $fetch('/api/v1/auth/password/reset', {
       method: 'POST',
       body: {
         token: token.value,

@@ -16,7 +16,7 @@
 
     <div class="performances-management__content">
       <DataTable
-        api-endpoint="/api/admin/performances"
+        api-endpoint="/api/v1/admin/performances"
         :columns="columns"
         :filters="filters"
         search-placeholder="Search performances by show, venue, or date..."

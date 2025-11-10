@@ -122,7 +122,7 @@ definePageMeta({
 
 // Fetch upcoming shows
 const { data: showsData, pending, error: fetchError } = await useFetch(
-  '/api/shows',
+  '/api/v1/shows',
   {
     query: {
       includeUpcoming: 'true',

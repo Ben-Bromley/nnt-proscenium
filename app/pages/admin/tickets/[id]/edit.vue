@@ -148,7 +148,7 @@ interface FormData {
 }
 
 // Fetch ticket type data
-const { data: response, pending, error: fetchError } = await useFetch<ApiResponse>(`/api/admin/tickets/${ticketTypeId}`)
+const { data: response, pending, error: fetchError } = await useFetch<ApiResponse>(`/api/v1/admin/tickets/${ticketTypeId}`)
 
 // Extract ticket type from response
 const ticketType = computed(() => response.value?.data)
@@ -196,7 +196,7 @@ const handleFormSubmit = async (_values: FormData, changedValues?: Partial<FormD
     }
   })
 
-  await $fetch(`/api/admin/tickets/${ticketTypeId}`, {
+  await $fetch(`/api/v1/admin/tickets/${ticketTypeId}`, {
     method: 'PATCH',
     body: updateData,
   })

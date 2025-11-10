@@ -117,7 +117,7 @@ const handleFormSubmit = async (values: FormData) => {
     isActive: values.isActive ?? true,
   }
 
-  const response = await $fetch<{ id: string, name: string }>('/api/admin/tickets', {
+  const response = await $fetch<{ id: string, name: string }>('/api/v1/admin/tickets', {
     method: 'POST',
     body: submitData,
   })
