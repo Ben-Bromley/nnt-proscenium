@@ -11,12 +11,6 @@ export default defineNuxtConfig({
     'nuxt-auth-utils',
   ],
 
-  $development: {
-    modules: [
-      '@prisma/nuxt',
-    ],
-  },
-
   devtools: { enabled: true },
 
   css: ['~/assets/styles/main.css'],
