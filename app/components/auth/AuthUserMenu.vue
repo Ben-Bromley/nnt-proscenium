@@ -12,7 +12,7 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui'
 
-const { user, logout } = useAuth()
+const { user, clearSession } = useAuth()
 
 // Check if user has admin access
 const hasAdminAccess = computed(() => {
@@ -22,8 +22,15 @@ const hasAdminAccess = computed(() => {
 // Handle sign out
 const handleLogout = async () => {
   try {
-    await logout()
-    await navigateTo('/login')
+    await $fetch('/api/v2/auth/logout', {
+      method: 'POST',
+    })
+
+    // Clear the session
+    await clearSession()
+
+    // Force navigation to login page
+    await navigateTo('/login', { replace: true, external: true })
   }
   catch (error) {
     console.error('Error logging out:', error)

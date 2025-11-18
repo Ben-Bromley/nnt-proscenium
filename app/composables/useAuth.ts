@@ -1,161 +1,44 @@
-import type { RoleType } from '@prisma/client'
-import type { H3Error } from 'h3'
-
-interface LoginCredentials {
-  email: string
-  password: string
-}
-
-interface RegisterCredentials {
-  email: string
-  password: string
-  name?: string
-}
-
+/**
+ * Basic wrapper for nuxt-auth-utils
+ * Provides session state and helper functions for common auth checks
+ */
 export const useAuth = () => {
-  const { session, fetch: refreshSession } = useUserSession()
+  const { loggedIn, user, session, fetch: refreshSession, clear: clearSession } = useUserSession()
 
-  const user = computed(() => session.value?.user)
-  const isLoggedIn = computed(() => !!user.value)
+  // Computed properties for common checks
+  const isAuthenticated = computed(() => !!loggedIn.value)
+  const isEmailVerified = computed(() => !!user.value?.emailVerified)
+  const isSetupCompleted = computed(() => !!user.value?.setupCompleted)
 
-  // Reactive state for pending and error
-  const pending = ref(false)
-  const error = ref<H3Error | null>(null)
-
-  const login = async (credentials: LoginCredentials) => {
-    try {
-      pending.value = true
-      error.value = null
-
-      const response = await $fetch('/api/v1/auth/login', {
-        method: 'POST',
-        body: credentials,
-      })
-
-      console.log('Login response:', response)
-
-      await refreshSession()
-      return response.data!.user
-    }
-    catch (err: unknown) {
-      // Handle H3Error responses
-      if (err && typeof err === 'object' && 'statusCode' in err) {
-        error.value = err as H3Error
-      }
-      else {
-        // Handle network or other errors
-        error.value = {
-          statusCode: 500,
-          statusMessage: 'Network Error',
-          data: { message: 'Failed to connect to server' },
-        } as H3Error
-      }
-
-      throw err
-    }
-    finally {
-      pending.value = false
-    }
+  // Role helper functions
+  const hasRole = (role: string): boolean => {
+    return user.value?.roles?.includes(role) ?? false
   }
 
-  const register = async (credentials: RegisterCredentials) => {
-    try {
-      pending.value = true
-      error.value = null
-
-      const result = await $fetch('/api/v1/auth/register', {
-        method: 'POST',
-        body: credentials,
-      })
-
-      // Note: Don't refresh session here since user needs to verify email first
-      return result
-    }
-    catch (err: unknown) {
-      // Handle H3Error responses
-      if (err && typeof err === 'object' && 'statusCode' in err) {
-        error.value = err as H3Error
-      }
-      else {
-        // Handle network or other errors
-        error.value = {
-          statusCode: 500,
-          statusMessage: 'Network Error',
-          data: { message: 'Failed to connect to server' },
-        } as H3Error
-      }
-
-      throw err
-    }
-    finally {
-      pending.value = false
-    }
+  const hasAnyRole = (roles: string[]): boolean => {
+    return roles.some(role => user.value?.roles?.includes(role)) ?? false
   }
 
-  const logout = async () => {
-    try {
-      pending.value = true
-      error.value = null
-
-      await $fetch('/api/v1/auth/logout', {
-        method: 'POST',
-      })
-
-      await refreshSession()
-      await navigateTo('/login')
-    }
-    catch (err: unknown) {
-      // Handle H3Error responses
-      if (err && typeof err === 'object' && 'statusCode' in err) {
-        error.value = err as H3Error
-      }
-      else {
-        // Handle network or other errors
-        error.value = {
-          statusCode: 500,
-          statusMessage: 'Network Error',
-          data: { message: 'Failed to connect to server' },
-        } as H3Error
-      }
-
-      throw err
-    }
-    finally {
-      pending.value = false
-    }
-  }
-
-  const hasRole = (role: RoleType): boolean => {
-    if (!user.value) return false
-    return user.value.roles.includes(role)
-  }
-
-  const hasAnyRole = (roles: RoleType[]): boolean => {
-    if (!user.value) return false
-    return user.value.roles.some(userRole => roles.includes(userRole as RoleType))
-  }
-
-  const hasAllRoles = (roles: RoleType[]): boolean => {
-    if (!user.value) return false
-    return roles.every(role => user.value?.roles.includes(role))
-  }
-
-  const clearError = () => {
-    error.value = null
+  const hasAllRoles = (roles: string[]): boolean => {
+    return roles.every(role => user.value?.roles?.includes(role)) ?? false
   }
 
   return {
-    user: readonly(user),
-    isLoggedIn: readonly(isLoggedIn),
-    pending: readonly(pending),
-    error: readonly(error),
-    login,
-    register,
-    logout,
+    // Session state from nuxt-auth-utils
+    loggedIn,
+    user,
+    session,
+    refreshSession,
+    clearSession,
+
+    // Computed helpers
+    isAuthenticated,
+    isEmailVerified,
+    isSetupCompleted,
+
+    // Role helpers
     hasRole,
     hasAnyRole,
     hasAllRoles,
-    clearError,
-    refresh: refreshSession,
   }
 }
