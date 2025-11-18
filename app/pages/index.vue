@@ -248,13 +248,7 @@ useSeoMeta({
 const { data: showsData, status: showsStatus } = await useFetch<{
   success: boolean
   data: ShowWithPerformances[]
-}>('/api/shows', {
-  query: {
-    includeUpcoming: 'true',
-    includePast: 'false',
-    limit: 3,
-  },
-})
+}>('/api/shows/whats-on')
 
 const upcomingShows = computed(() => showsData.value?.data || [])
 const showsLoading = computed(() => showsStatus.value === 'pending')
