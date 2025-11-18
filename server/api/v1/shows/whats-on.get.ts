@@ -31,7 +31,7 @@
  * Error Responses:
  * - 500: Internal server error
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 
 export default defineEventHandler(async () => {
   try {
