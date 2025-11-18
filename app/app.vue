@@ -2,12 +2,6 @@
   <UApp>
     <NuxtRouteAnnouncer />
 
-    <UBanner
-      id="under-construction"
-      title="This site is still under construction."
-      close
-    />
-
     <ClientOnly>
       <!-- <UBanner
         v-if="user && !isSetupCompleted"
