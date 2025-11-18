@@ -1,9 +1,8 @@
 <template>
   <div>
-    <!-- Show user menu when logged in -->
-    <AuthUserMenu v-if="isLoggedIn" />
-
-    <!-- Show login button when logged out -->
+    <!-- User is authenticated -->
+    <AuthUserMenu v-if="loggedIn" />
+    <!-- User is not authenticated -->
     <UButton
       v-else
       to="/login"
@@ -18,5 +17,5 @@
 </template>
 
 <script setup lang="ts">
-const { isLoggedIn } = useAuth()
+const { loggedIn } = useAuth()
 </script>

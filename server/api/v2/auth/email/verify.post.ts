@@ -49,20 +49,5 @@ export default defineEventHandler(async (event) => {
     },
   })
 
-  await replaceUserSession(event, {
-    user: {
-      id: user.id,
-      email: user.email,
-      emailVerified: true,
-      setupCompleted: user.setupCompleted,
-      roles: user.roles.map(r => r.role),
-      profile: {
-        name: user.profile?.name,
-        avatar: user.profile?.avatar,
-      },
-    },
-    loggedInAt: new Date(),
-  })
-
   return {}
 })
