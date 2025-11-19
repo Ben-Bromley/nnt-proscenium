@@ -35,8 +35,3 @@ export default defineEventHandler(async (event) => {
 
   return {}
 })
-
-const sendPasswordResetEmail = async (email: string, token: string) => {
-  // TODO: Implement email sending logic here
-  console.log(`Send password reset email to ${email} with token: ${token}`)
-}
