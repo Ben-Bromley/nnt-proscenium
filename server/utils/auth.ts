@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto'
+import prisma from '~~/server/database'
 
 /**
  * Generate a secure verification token
@@ -12,8 +13,6 @@ export function generateVerificationToken(): string {
  * Returns the generated token
  */
 export async function createEmailVerificationToken(userId: string): Promise<string> {
-  const prisma = (await import('~~/server/database')).default
-
   const verificationToken = generateVerificationToken()
   const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
