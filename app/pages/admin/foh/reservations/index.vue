@@ -24,6 +24,7 @@
 
     <div class="foh-reservations__content">
       <DataTable
+        ref="dataTableRef"
         api-endpoint="/api/v1/foh/reservations"
         :columns="columns"
         :filters="filters"
@@ -101,6 +102,16 @@
                 £{{ formatPrice(selectedReservation.totalPrice) }}
               </span>
             </div>
+
+            <div
+              v-if="selectedReservation.notes"
+              class="summary-row"
+            >
+              <span class="summary-label">Customer Notes</span>
+              <span class="summary-value notes-text">
+                {{ selectedReservation.notes }}
+              </span>
+            </div>
           </div>
 
           <UAlert
@@ -147,6 +158,9 @@ definePageMeta({
 
 const { formatDateTime } = useFormatters()
 
+// DataTable ref for refreshing
+const dataTableRef = ref<any>(null)
+
 interface Reservation {
   id: string
   reservationCode: string
@@ -154,6 +168,7 @@ interface Reservation {
   customerEmail: string
   totalPrice: number
   status: string
+  notes?: string | null
   performance?: {
     startDateTime: string
     show?: {
@@ -201,6 +216,17 @@ const columns = [
       if (!value)
         return '-'
       return formatDateTime(value as string)
+    },
+  },
+  {
+    key: 'notes',
+    label: 'Notes',
+    sortable: false,
+    render: (value: unknown): string => {
+      if (!value || value === '')
+        return '-'
+      const noteStr = String(value)
+      return noteStr.length > 50 ? `${noteStr.substring(0, 50)}...` : noteStr
     },
   },
   {
@@ -300,24 +326,26 @@ async function confirmCollectPayment() {
   collectError.value = null
 
   try {
-    const { error: updateError } = await useFetch(
+    const response = await $fetch(
       `/api/v1/foh/reservations/${selectedReservation.value.id}/collect`,
       {
         method: 'POST',
       },
     )
 
-    if (updateError.value) {
-      collectError.value = updateError.value.statusMessage || 'Failed to collect payment'
-    }
-    else {
+    if (response?.success) {
       // Refresh the table data
-      await refreshNuxtData('datatable-/api/v1/foh/reservations')
+      if (dataTableRef.value?.refresh) {
+        await dataTableRef.value.refresh()
+      }
       closeCollectModal()
     }
+    else {
+      collectError.value = 'Failed to collect payment'
+    }
   }
-  catch {
-    collectError.value = 'An unexpected error occurred'
+  catch (error: any) {
+    collectError.value = error?.data?.message || error?.message || 'An unexpected error occurred'
   }
   finally {
     isCollecting.value = false
@@ -430,6 +458,13 @@ async function confirmCollectPayment() {
   font-size: 13px;
   color: var(--secondary-text-color);
   font-weight: 400;
+}
+
+.notes-text {
+  font-style: italic;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-width: 400px;
 }
 
 .modal-actions {

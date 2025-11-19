@@ -127,6 +127,7 @@ interface Props {
   apiEndpoint: string
   columns: Column<T>[]
   filters?: Filter[]
+  defaultFilters?: Record<string, string | number | boolean>
   searchPlaceholder?: string
   emptyMessage?: string
   defaultSortBy?: string
@@ -139,6 +140,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   filters: () => [],
+  defaultFilters: () => ({}),
   searchPlaceholder: 'Search...',
   emptyMessage: 'No data available',
   defaultSortBy: 'createdAt',
@@ -158,7 +160,7 @@ const totalPages = ref(0)
 
 // Query state
 const searchQuery = ref('')
-const filterValues = ref<Record<string, string | number | boolean | null>>({})
+const filterValues = ref<Record<string, string | number | boolean | null>>({ ...props.defaultFilters })
 const currentPage = ref(1)
 const perPage = ref(props.defaultPerPage)
 const sorting = ref<SortingState>([
