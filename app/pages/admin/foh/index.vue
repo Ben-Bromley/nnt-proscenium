@@ -175,12 +175,6 @@
                   {{ performance.venue?.name }}
                 </div>
               </div>
-              <UBadge
-                :color="getStatusColor(performance.status)"
-                variant="soft"
-              >
-                {{ performance.status }}
-              </UBadge>
             </div>
           </div>
         </UCard>

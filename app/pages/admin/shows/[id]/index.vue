@@ -214,13 +214,6 @@
                     <span>{{ performance.maxCapacity === -1 ? 'Unlimited' : performance.maxCapacity }} capacity</span>
                   </div>
                 </div>
-                <UBadge
-                  :color="getPerformanceStatusColor(performance.status)"
-                  variant="soft"
-                  size="sm"
-                >
-                  {{ formatPerformanceStatus(performance.status) }}
-                </UBadge>
               </div>
               <div class="performance-actions">
                 <UButton
@@ -403,28 +396,11 @@ function formatShowType(type: string) {
   return type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
 }
 
-function formatPerformanceStatus(status: string) {
-  return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
-}
-
 function getStatusColor(status: string): 'neutral' | 'success' | 'error' {
   const colorMap: Record<string, 'neutral' | 'success' | 'error'> = {
     DRAFT: 'neutral',
     PUBLISHED: 'success',
     CANCELLED: 'error',
-  }
-  return colorMap[status] || 'neutral'
-}
-
-function getPerformanceStatusColor(status: string): 'neutral' | 'success' | 'warning' | 'error' {
-  const colorMap: Record<string, 'neutral' | 'success' | 'warning' | 'error'> = {
-    SCHEDULED: 'neutral',
-    ON_SALE: 'success',
-    RESTRICTED: 'warning',
-    CLOSED: 'neutral',
-    SOLD_OUT: 'error',
-    CANCELLED: 'error',
-    PAST: 'neutral',
   }
   return colorMap[status] || 'neutral'
 }

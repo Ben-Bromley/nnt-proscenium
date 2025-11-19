@@ -73,7 +73,6 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         maxCapacity: true,
-        reservationsOpen: true,
         show: {
           select: {
             id: true,
@@ -199,7 +198,7 @@ export default defineEventHandler(async (event) => {
           availability: {
             totalCapacity: performance.maxCapacity,
             reservedForThisType: totalReserved,
-            isAvailable: performance.reservationsOpen && totalReserved < performance.maxCapacity,
+            isAvailable: totalReserved < performance.maxCapacity,
           },
         }
       }),
@@ -210,7 +209,6 @@ export default defineEventHandler(async (event) => {
         id: performance.id,
         title: performance.title,
         maxCapacity: performance.maxCapacity,
-        reservationsOpen: performance.reservationsOpen,
         show: performance.show,
       },
       ticketTypes: ticketsWithAvailability,

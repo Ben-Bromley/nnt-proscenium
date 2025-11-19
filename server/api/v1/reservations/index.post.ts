@@ -77,9 +77,9 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         startDateTime: true,
+        runtimeMinutes: true,
+        intervalMinutes: true,
         maxCapacity: true,
-        reservationsOpen: true,
-        status: true,
         show: {
           select: {
             id: true,
@@ -107,13 +107,6 @@ export default defineEventHandler(async (event) => {
       throw createError({
         statusCode: 400,
         statusMessage: 'Reservations are not available for this show',
-      })
-    }
-
-    if (!performance.reservationsOpen) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Reservations are not open for this performance',
       })
     }
 

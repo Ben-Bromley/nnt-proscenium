@@ -68,23 +68,15 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
 
     // Basic validation
-    if (!body.title || !body.startDateTime || !body.endDateTime || !body.showId || !body.maxCapacity) {
+    if (!body.title || !body.startDateTime || body.runtimeMinutes === undefined || !body.showId || !body.maxCapacity) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Missing required fields: title, startDateTime, endDateTime, showId, and maxCapacity',
+        statusMessage: 'Missing required fields: title, startDateTime, runtimeMinutes, showId, and maxCapacity',
       })
     }
 
     // Validate dates
     const startDate = new Date(body.startDateTime)
-    const endDate = new Date(body.endDateTime)
-
-    if (startDate >= endDate) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: 'Start date must be before end date',
-      })
-    }
 
     if (startDate <= new Date()) {
       throw createError({
@@ -126,12 +118,11 @@ export default defineEventHandler(async (event) => {
       data: {
         title: body.title,
         startDateTime: startDate,
-        endDateTime: endDate,
+        runtimeMinutes: Number(body.runtimeMinutes),
+        intervalMinutes: Number(body.intervalMinutes || 0),
         type: body.type || 'PERFORMANCE',
         details: body.details,
-        status: body.status || 'SCHEDULED',
         maxCapacity: Number(body.maxCapacity),
-        reservationsOpen: body.reservationsOpen ?? true,
         reservationInstructions: body.reservationInstructions,
         externalBookingLink: body.externalBookingLink,
         showId: body.showId,
@@ -141,12 +132,11 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         startDateTime: true,
-        endDateTime: true,
+        runtimeMinutes: true,
+        intervalMinutes: true,
         type: true,
         details: true,
-        status: true,
         maxCapacity: true,
-        reservationsOpen: true,
         reservationInstructions: true,
         externalBookingLink: true,
         createdAt: true,

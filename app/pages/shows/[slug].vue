@@ -120,7 +120,7 @@
                         </div>
                         <div class="meta-item">
                           <UIcon name="i-lucide-clock" />
-                          <span>{{ formatPerformanceTime(performance.startDateTime, performance.endDateTime) }}</span>
+                          <span>{{ formatPerformanceTime(performance.startDateTime, performance.runtimeMinutes, performance.intervalMinutes) }}</span>
                         </div>
                         <div
                           v-if="performance.venue"
@@ -300,9 +300,9 @@ function formatPerformanceDate(dateString: string): string {
   }).format(date)
 }
 
-function formatPerformanceTime(startString: string, endString: string): string {
+function formatPerformanceTime(startString: string, runtimeMinutes: number, intervalMinutes: number): string {
   const start = new Date(startString)
-  const end = new Date(endString)
+  const end = new Date(start.getTime() + runtimeMinutes * 60000)
   const startTime = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -311,13 +311,15 @@ function formatPerformanceTime(startString: string, endString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(end)
-  return `${startTime} - ${endTime}`
+  const intervalText = intervalMinutes > 0 ? ` (inc. ${intervalMinutes}min interval)` : ''
+  return `${startTime} - ${endTime}${intervalText}`
 }
 
 interface Performance {
   id: string
   maxCapacity: number
-  reservationsOpen: boolean
+  runtimeMinutes: number
+  intervalMinutes: number
   externalBookingLink?: string | null
   startDateTime: string
   _count?: {
@@ -345,10 +347,6 @@ function getAvailableSeats(performance: Performance): number {
 }
 
 function canBook(performance: Performance): boolean {
-  // Check if reservations are open
-  if (!performance.reservationsOpen)
-    return false
-
   // Check if there's an external booking link (handled separately)
   if (performance.externalBookingLink)
     return false
@@ -365,9 +363,6 @@ function canBook(performance: Performance): boolean {
 }
 
 function getUnavailableReason(performance: Performance): string {
-  if (!performance.reservationsOpen)
-    return 'Booking Not Available'
-
   const now = new Date()
   const performanceDate = new Date(performance.startDateTime)
   if (performanceDate <= now)

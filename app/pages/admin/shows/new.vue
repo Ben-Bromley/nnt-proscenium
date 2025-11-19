@@ -228,13 +228,27 @@
                       </UFormGroup>
 
                       <UFormGroup
-                        label="End Date & Time"
-                        :name="`performances.${index}.endDateTime`"
+                        label="Runtime (minutes)"
+                        :name="`performances.${index}.runtimeMinutes`"
                         required
+                        description="Total show runtime in minutes"
                       >
                         <UInput
-                          v-model="performance.endDateTime"
-                          type="datetime-local"
+                          v-model.number="performance.runtimeMinutes"
+                          type="number"
+                          placeholder="e.g., 120 for 2 hours"
+                        />
+                      </UFormGroup>
+
+                      <UFormGroup
+                        label="Interval (minutes)"
+                        :name="`performances.${index}.intervalMinutes`"
+                        description="Interval/intermission duration (0 if none)"
+                      >
+                        <UInput
+                          v-model.number="performance.intervalMinutes"
+                          type="number"
+                          placeholder="e.g., 15"
                         />
                       </UFormGroup>
                     </div>
@@ -274,26 +288,6 @@
                         :rows="2"
                       />
                     </UFormGroup>
-
-                    <UFormGroup
-                      label="Booking Status"
-                      :name="`performances.${index}.status`"
-                    >
-                      <USelect
-                        v-model="performance.status"
-                        :items="performanceStatusOptions"
-                        placeholder="Select status"
-                      />
-                    </UFormGroup>
-
-                    <div class="grid grid-cols-2 gap-4">
-                      <UFormGroup
-                        label="Reservations Open"
-                        :name="`performances.${index}.reservationsOpen`"
-                      >
-                        <UToggle v-model="performance.reservationsOpen" />
-                      </UFormGroup>
-                    </div>
                   </div>
                 </UCard>
               </div>
@@ -388,16 +382,6 @@ const performanceTypeOptions = [
   { value: 'WORKSHOP', label: 'Workshop' },
 ]
 
-// Performance status options
-const performanceStatusOptions = [
-  { value: 'SCHEDULED', label: 'Scheduled' },
-  { value: 'ON_SALE', label: 'On Sale' },
-  { value: 'RESTRICTED', label: 'Restricted' },
-  { value: 'CLOSED', label: 'Closed' },
-  { value: 'SOLD_OUT', label: 'Sold Out' },
-  { value: 'CANCELLED', label: 'Cancelled' },
-]
-
 // Form schema
 const showFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
@@ -424,12 +408,11 @@ interface Performance {
   title: string
   venueId: string
   startDateTime: string
-  endDateTime: string
+  runtimeMinutes: number
+  intervalMinutes: number
   type: string
   details: string
-  status: string
   maxCapacity: number
-  reservationsOpen: boolean
 }
 
 const performances = ref<Performance[]>([])
@@ -451,18 +434,16 @@ function generateSlug() {
 function addPerformance() {
   const now = new Date()
   const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  const twoHoursLater = new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000)
 
   performances.value.push({
     title: `Performance ${performances.value.length + 1}`,
     venueId: '',
     startDateTime: nextWeek.toISOString().slice(0, 16),
-    endDateTime: twoHoursLater.toISOString().slice(0, 16),
+    runtimeMinutes: 120,
+    intervalMinutes: 15,
     type: 'PERFORMANCE',
     details: '',
-    status: 'SCHEDULED',
     maxCapacity: 100,
-    reservationsOpen: true,
   })
 }
 
@@ -479,23 +460,19 @@ function duplicateLastPerformance() {
   if (!last) return
 
   const lastStart = new Date(last.startDateTime)
-  const lastEnd = new Date(last.endDateTime)
-  const duration = lastEnd.getTime() - lastStart.getTime()
 
   // Add 1 day to the last performance
   const newStart = new Date(lastStart.getTime() + 24 * 60 * 60 * 1000)
-  const newEnd = new Date(newStart.getTime() + duration)
 
   performances.value.push({
     title: `Performance ${performances.value.length + 1}`,
     venueId: last.venueId,
     startDateTime: newStart.toISOString().slice(0, 16),
-    endDateTime: newEnd.toISOString().slice(0, 16),
+    runtimeMinutes: last.runtimeMinutes,
+    intervalMinutes: last.intervalMinutes,
     type: last.type,
     details: last.details,
-    status: last.status,
     maxCapacity: last.maxCapacity,
-    reservationsOpen: last.reservationsOpen,
   })
 }
 
@@ -532,12 +509,11 @@ async function handleSubmit() {
             body: {
               title: perf.title,
               startDateTime: new Date(perf.startDateTime).toISOString(),
-              endDateTime: new Date(perf.endDateTime).toISOString(),
+              runtimeMinutes: Number(perf.runtimeMinutes),
+              intervalMinutes: Number(perf.intervalMinutes || 0),
               type: perf.type,
               details: perf.details || undefined,
-              status: perf.status,
               maxCapacity: Number(perf.maxCapacity),
-              reservationsOpen: perf.reservationsOpen,
               venueId: perf.venueId || undefined,
             },
           }),

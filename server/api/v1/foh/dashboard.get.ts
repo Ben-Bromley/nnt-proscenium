@@ -72,9 +72,9 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         startDateTime: true,
-        endDateTime: true,
+        runtimeMinutes: true,
+        intervalMinutes: true,
         maxCapacity: true,
-        status: true,
         show: {
           select: {
             id: true,

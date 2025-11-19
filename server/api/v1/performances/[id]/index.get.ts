@@ -90,12 +90,11 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         startDateTime: true,
-        endDateTime: true,
+        runtimeMinutes: true,
+        intervalMinutes: true,
         type: true,
         details: true,
-        status: true,
         maxCapacity: true,
-        reservationsOpen: true,
         reservationInstructions: true,
         externalBookingLink: true,
         createdAt: true,
@@ -240,7 +239,7 @@ export default defineEventHandler(async (event) => {
         totalCapacity: performance.maxCapacity,
         availableTickets,
         reservedCount: totalReserved,
-        isAvailable: availableTickets > 0 && performance.reservationsOpen,
+        isAvailable: availableTickets > 0,
       },
     }
 

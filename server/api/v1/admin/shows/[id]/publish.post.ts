@@ -22,7 +22,6 @@ export default defineEventHandler(async (event) => {
           select: {
             id: true,
             startDateTime: true,
-            status: true,
           },
         },
         showTicketPrices: {
@@ -63,11 +62,11 @@ export default defineEventHandler(async (event) => {
 
     // Must have at least one upcoming performance
     const upcomingPerformances = show.performances.filter(p =>
-      new Date(p.startDateTime) > new Date() && p.status === 'SCHEDULED',
+      new Date(p.startDateTime) > new Date(),
     )
 
     if (upcomingPerformances.length === 0) {
-      validationErrors.push('Show must have at least one scheduled upcoming performance')
+      validationErrors.push('Show must have at least one upcoming performance')
     }
 
     // Must have ticket pricing configured

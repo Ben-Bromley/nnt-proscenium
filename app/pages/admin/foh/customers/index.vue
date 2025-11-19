@@ -300,7 +300,8 @@ definePageMeta({
 interface Performance {
   id: string
   startDateTime: string
-  endDateTime?: string
+  runtimeMinutes: number
+  intervalMinutes: number
   maxCapacity: number
   show: {
     title: string

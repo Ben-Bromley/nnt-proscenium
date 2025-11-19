@@ -34,9 +34,9 @@ export const reservationWithRelationsSelectQuery = {
       id: true,
       title: true,
       startDateTime: true,
-      endDateTime: true,
+      runtimeMinutes: true,
+      intervalMinutes: true,
       type: true,
-      status: true,
       show: {
         select: {
           id: true,
@@ -94,9 +94,9 @@ export const reservationPublicSelectQuery = {
       id: true,
       title: true,
       startDateTime: true,
-      endDateTime: true,
+      runtimeMinutes: true,
+      intervalMinutes: true,
       type: true,
-      status: true,
       show: {
         select: {
           id: true,
@@ -542,8 +542,6 @@ export async function validateReservationRequest(
     where: { id: performanceId },
     select: {
       id: true,
-      status: true,
-      reservationsOpen: true,
       maxCapacity: true,
       showId: true,
       show: {
@@ -558,14 +556,6 @@ export async function validateReservationRequest(
   if (!performance) {
     errors.push('Performance not found')
     return { isValid: false, errors, totalPrice: 0, ticketDetails: [] }
-  }
-
-  if (!performance.reservationsOpen) {
-    errors.push('Reservations are not open for this performance')
-  }
-
-  if (performance.status === 'CANCELLED') {
-    errors.push('This performance has been cancelled')
   }
 
   if (performance.show?.status !== 'PUBLISHED') {

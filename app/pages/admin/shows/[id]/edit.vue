@@ -194,13 +194,6 @@
                       <span v-if="performance.venue">• {{ performance.venue.name }}</span>
                     </div>
                   </div>
-                  <UBadge
-                    :color="getPerformanceStatusColor(performance.status)"
-                    variant="soft"
-                    size="sm"
-                  >
-                    {{ formatPerformanceStatus(performance.status) }}
-                  </UBadge>
                 </div>
               </div>
 

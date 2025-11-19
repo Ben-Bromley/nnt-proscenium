@@ -75,7 +75,7 @@
                 </div>
                 <div class="info-item">
                   <span class="info-label">Time</span>
-                  <span class="info-value">{{ formatTime(reservation.performance?.startDateTime, reservation.performance?.endDateTime) }}</span>
+                  <span class="info-value">{{ formatTime(reservation.performance?.startDateTime, reservation.performance?.runtimeMinutes, reservation.performance?.intervalMinutes) }}</span>
                 </div>
                 <div
                   v-if="reservation.performance?.venue"
@@ -217,7 +217,8 @@ interface Reservation {
   totalPrice: number
   performance?: {
     startDateTime: string
-    endDateTime: string
+    runtimeMinutes: number
+    intervalMinutes: number
     show?: {
       title: string
     }
@@ -282,11 +283,11 @@ function formatDate(dateString: string | undefined): string {
   }).format(date)
 }
 
-function formatTime(startString: string | undefined, endString: string | undefined): string {
-  if (!startString || !endString)
+function formatTime(startString: string | undefined, runtimeMinutes: number | undefined, intervalMinutes: number | undefined): string {
+  if (!startString || !runtimeMinutes)
     return 'N/A'
   const start = new Date(startString)
-  const end = new Date(endString)
+  const end = new Date(start.getTime() + runtimeMinutes * 60000)
   const startTime = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',

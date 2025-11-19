@@ -20,17 +20,12 @@ export default defineEventHandler(async (event) => {
 
     const body = await readBody(event)
 
-    // Validate dates if both are provided
-    if (body.startDateTime && body.endDateTime) {
-      const startDate = new Date(body.startDateTime)
-      const endDate = new Date(body.endDateTime)
-
-      if (startDate >= endDate) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Start date must be before end date',
-        })
-      }
+    // Validate runtime if provided
+    if (body.runtimeMinutes !== undefined && body.runtimeMinutes < 0) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Runtime must be a positive number',
+      })
     }
 
     // Check if performance exists
@@ -67,12 +62,11 @@ export default defineEventHandler(async (event) => {
       data: {
         ...(body.title && { title: body.title }),
         ...(body.startDateTime && { startDateTime: new Date(body.startDateTime) }),
-        ...(body.endDateTime && { endDateTime: new Date(body.endDateTime) }),
+        ...(body.runtimeMinutes !== undefined && { runtimeMinutes: Number(body.runtimeMinutes) }),
+        ...(body.intervalMinutes !== undefined && { intervalMinutes: Number(body.intervalMinutes) }),
         ...(body.type && { type: body.type }),
         ...(body.details !== undefined && { details: body.details }),
-        ...(body.status && { status: body.status }),
         ...(body.maxCapacity !== undefined && { maxCapacity: Number(body.maxCapacity) }),
-        ...(body.reservationsOpen !== undefined && { reservationsOpen: body.reservationsOpen }),
         ...(body.reservationInstructions !== undefined && { reservationInstructions: body.reservationInstructions }),
         ...(body.externalBookingLink !== undefined && { externalBookingLink: body.externalBookingLink }),
         ...(body.venueId !== undefined && { venueId: body.venueId }),
@@ -82,12 +76,11 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         startDateTime: true,
-        endDateTime: true,
+        runtimeMinutes: true,
+        intervalMinutes: true,
         type: true,
         details: true,
-        status: true,
         maxCapacity: true,
-        reservationsOpen: true,
         reservationInstructions: true,
         externalBookingLink: true,
         createdAt: true,

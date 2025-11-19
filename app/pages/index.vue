@@ -211,10 +211,8 @@ interface PerformanceForShow {
   id: string
   title: string
   startDateTime: string | Date
-  endDateTime: string | Date
-  status: string
-  maxCapacity: number
-  reservationsOpen: boolean
+  runtimeMinutes: number
+  intervalMinutes: number
 }
 
 interface ShowWithPerformances {

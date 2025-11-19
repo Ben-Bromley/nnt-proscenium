@@ -78,12 +78,11 @@ export default defineEventHandler(async (event) => {
         id: true,
         title: true,
         startDateTime: true,
-        endDateTime: true,
+        runtimeMinutes: true,
+        intervalMinutes: true,
         type: true,
         details: true,
-        status: true,
         maxCapacity: true,
-        reservationsOpen: true,
         reservationInstructions: true,
         show: {
           select: {

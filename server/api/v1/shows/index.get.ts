@@ -141,7 +141,8 @@ export default defineEventHandler(async (event) => {
               id: true,
               title: true,
               startDateTime: true,
-              endDateTime: true,
+              runtimeMinutes: true,
+              intervalMinutes: true,
               venue: {
                 select: {
                   id: true,

@@ -93,11 +93,8 @@ export default defineEventHandler(async (event) => {
       where.startDateTime = { gte: new Date() }
     }
 
-    // Available for reservations filter
-    if (availableOnly) {
-      where.reservationsOpen = true
-      where.status = 'SCHEDULED'
-    }
+    // Available for reservations filter - removed as status and reservationsOpen no longer exist
+    // Performances for published shows are considered available by default
 
     // Search filter
     if (search) {
@@ -124,12 +121,11 @@ export default defineEventHandler(async (event) => {
           id: true,
           title: true,
           startDateTime: true,
-          endDateTime: true,
+          runtimeMinutes: true,
+          intervalMinutes: true,
           type: true,
           details: true,
-          status: true,
           maxCapacity: true,
-          reservationsOpen: true,
           reservationInstructions: true,
           externalBookingLink: true,
           createdAt: true,

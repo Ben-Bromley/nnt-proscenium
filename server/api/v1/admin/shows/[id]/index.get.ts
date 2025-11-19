@@ -33,8 +33,8 @@ export default defineEventHandler(async (event) => {
             id: true,
             title: true,
             startDateTime: true,
-            endDateTime: true,
-            status: true,
+            runtimeMinutes: true,
+            intervalMinutes: true,
             maxCapacity: true,
             venue: {
               select: {
