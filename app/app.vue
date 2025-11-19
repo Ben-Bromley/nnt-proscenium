@@ -2,27 +2,39 @@
   <UApp>
     <NuxtRouteAnnouncer />
 
-    <UBanner
-      id="under-construction"
-      title="This site is still under construction."
-      close
-    />
+    <ClientOnly>
+      <!-- <UBanner
+        v-if="user && !isSetupCompleted"
+        id="account-setup"
+        title="Complete your account setup to access all features."
+        color="warning"
+        :actions="[
+          {
+            label: 'Complete Setup',
+            color: 'primary',
+            variant: 'outline',
+            size: 'md',
+            to: '/account/setup',
+          },
+        ]"
+      /> -->
 
-    <UBanner
-      v-if="showSetupBanner"
-      id="account-setup"
-      title="Complete your account setup to access all features."
-      color="secondary"
-      :actions="[
-        {
-          label: 'Complete Setup',
-          color: 'primary',
-          variant: 'outline',
-          size: 'md',
-          to: '/account/setup',
-        },
-      ]"
-    />
+      <UBanner
+        v-if="user && !isEmailVerified"
+        id="email-verification"
+        title="Please verify your email address to secure your account."
+        color="warning"
+        :actions="[
+          {
+            label: 'Resend Verification Email',
+            color: 'primary',
+            variant: 'outline',
+            size: 'md',
+            onClick: resendVerificationEmail,
+          },
+        ]"
+      />
+    </ClientOnly>
 
     <!-- TODO: Replace this approach. it's really hacky and I hate it -->
 
@@ -64,21 +76,31 @@ const isDashboardLayout = computed(() => {
 })
 
 // Setup banner logic
-const { user } = useUserSession()
+const { user, isEmailVerified } = useAuth()
 
-const showSetupBanner = computed(() => {
-  // Only show for authenticated users
-  if (!user.value) return false
+const toast = useToast()
 
-  // Don't show if user hasn't verified email yet
-  if (!user.value.emailVerified) return false
+const resendVerificationEmail = async () => {
+  if (!user.value?.email) return
 
-  // Don't show if user has already completed setup
-  if (user.value.setupCompleted) return false
+  try {
+    await $fetch('/api/v2/auth/email/request', {
+      method: 'POST',
+      body: { email: user.value.email },
+    })
 
-  // Don't show on admin pages to avoid layout conflicts
-  if (isDashboardLayout.value) return false
-
-  return true
-})
+    toast.add({
+      title: 'Verification email sent',
+      description: 'Please check your inbox.',
+      color: 'success',
+    })
+  }
+  catch (error) {
+    toast.add({
+      title: 'Error',
+      description: getErrorMessage(error),
+      color: 'error',
+    })
+  }
+}
 </script>

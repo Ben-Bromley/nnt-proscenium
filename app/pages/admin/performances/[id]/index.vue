@@ -140,16 +140,6 @@
 
           <div class="info-grid">
             <div class="info-item">
-              <span class="info-label">Status</span>
-              <UBadge
-                :color="getStatusColor(performance.status)"
-                variant="soft"
-              >
-                {{ formatStatus(performance.status) }}
-              </UBadge>
-            </div>
-
-            <div class="info-item">
               <span class="info-label">Type</span>
               <span class="info-value">{{ formatType(performance.type) }}</span>
             </div>
@@ -160,8 +150,13 @@
             </div>
 
             <div class="info-item">
-              <span class="info-label">End Date & Time</span>
-              <span class="info-value">{{ formatDateTime(performance.endDateTime) }}</span>
+              <span class="info-label">Runtime</span>
+              <span class="info-value">{{ performance.runtimeMinutes }} minutes</span>
+            </div>
+
+            <div class="info-item">
+              <span class="info-label">Interval</span>
+              <span class="info-value">{{ performance.intervalMinutes || 0 }} minutes</span>
             </div>
 
             <div
@@ -175,16 +170,6 @@
             <div class="info-item">
               <span class="info-label">Max Capacity</span>
               <span class="info-value">{{ performance.maxCapacity === -1 ? 'Unlimited' : performance.maxCapacity }}</span>
-            </div>
-
-            <div class="info-item">
-              <span class="info-label">Reservations</span>
-              <UBadge
-                :color="performance.reservationsOpen ? 'success' : 'neutral'"
-                variant="soft"
-              >
-                {{ performance.reservationsOpen ? 'Open' : 'Closed' }}
-              </UBadge>
             </div>
 
             <div
@@ -348,7 +333,7 @@ definePageMeta({
 const route = useRoute()
 const performanceId = route.params.id as string
 
-const { data: response, pending, error } = await useFetch(`/api/admin/performances/${performanceId}`)
+const { data: response, pending, error } = await useFetch(`/api/v1/admin/performances/${performanceId}`)
 
 const performance = computed(() => response.value?.data)
 

@@ -1,4 +1,4 @@
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 import type { Prisma } from '@prisma/client'
 import { dbErrors } from './index'
 
@@ -9,12 +9,11 @@ export const performanceSelectQuery = {
   id: true,
   title: true,
   startDateTime: true,
-  endDateTime: true,
+  runtimeMinutes: true,
+  intervalMinutes: true,
   type: true,
   details: true,
-  status: true,
   maxCapacity: true,
-  reservationsOpen: true,
   reservationInstructions: true,
   externalBookingLink: true,
   createdAt: true,
@@ -90,12 +89,11 @@ export const performancePublicSelectQuery = {
   id: true,
   title: true,
   startDateTime: true,
-  endDateTime: true,
+  runtimeMinutes: true,
+  intervalMinutes: true,
   type: true,
   details: true,
-  status: true,
   maxCapacity: true,
-  reservationsOpen: true,
   reservationInstructions: true,
   externalBookingLink: true,
   createdAt: true,
@@ -171,7 +169,6 @@ export async function createPerformance(data: Prisma.PerformanceCreateInput): Pr
 export async function getPerformances(filters?: {
   showId?: string
   venueId?: string
-  status?: Prisma.EnumPerformanceBookingStatusFilter
   type?: Prisma.EnumPerformanceTypeFilter
   startDate?: Date
   endDate?: Date
@@ -189,10 +186,6 @@ export async function getPerformances(filters?: {
 
   if (filters?.venueId) {
     where.venueId = filters.venueId
-  }
-
-  if (filters?.status) {
-    where.status = filters.status
   }
 
   if (filters?.type) {

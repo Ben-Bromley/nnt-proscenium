@@ -69,18 +69,11 @@
                 <div class="performance-card__time">
                   <UIcon name="i-lucide-clock" />
                   {{ formatTime(performance.startDateTime) }}
-                  <span v-if="performance.endDateTime">
-                    - {{ formatTime(performance.endDateTime) }}
+                  <span v-if="performance.runtimeMinutes">
+                    - {{ formatEndTime(performance.startDateTime, performance.runtimeMinutes) }}
                   </span>
                 </div>
               </div>
-              <UBadge
-                :color="getStatusColor(performance.status) as any"
-                variant="soft"
-                size="lg"
-              >
-                {{ performance.status }}
-              </UBadge>
             </div>
           </template>
 
@@ -223,7 +216,7 @@ definePageMeta({
 
 // Fetch today's performances
 const { data, pending, error: fetchError } = await useFetch(
-  '/api/foh/performances/today',
+  '/api/v1/foh/performances/today',
   {
     key: 'foh-performances-today',
   },
@@ -257,20 +250,18 @@ function formatTime(dateString: string): string {
   })
 }
 
+function formatEndTime(startDateTime: string, runtimeMinutes: number): string {
+  const end = new Date(new Date(startDateTime).getTime() + runtimeMinutes * 60000)
+  return new Intl.DateTimeFormat('en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(end)
+}
+
 function calculatePercentage(reserved: number, capacity: number): number {
   if (capacity === 0)
     return 0
   return Math.round((reserved / capacity) * 100)
-}
-
-// Status helpers
-function getStatusColor(status: string): string {
-  const colorMap: Record<string, string> = {
-    SCHEDULED: 'blue',
-    CANCELLED: 'red',
-    COMPLETED: 'gray',
-  }
-  return colorMap[status] || 'gray'
 }
 
 function getCapacityColor(percentage: number): string {

@@ -1,4 +1,4 @@
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 import type { Prisma } from '@prisma/client'
 import { dbErrors } from './index'
 
@@ -59,8 +59,8 @@ export const showWithRelationsSelectQuery = {
       id: true,
       title: true,
       startDateTime: true,
-      endDateTime: true,
-      status: true,
+      runtimeMinutes: true,
+      intervalMinutes: true,
     },
     where: { isActive: true },
     orderBy: { startDateTime: 'asc' },

@@ -139,7 +139,7 @@ const route = useRoute()
 const contentWarningId = route.params.id as string
 
 // Fetch content warning details
-const { data: contentWarning, pending, error } = await useFetch(`/api/admin/content-warnings/${contentWarningId}`)
+const { data: contentWarning, pending, error } = await useFetch(`/api/v1/admin/content-warnings/${contentWarningId}`)
 
 // Computed for easier access to nested data
 const contentWarningData = computed(() => contentWarning.value?.data?.contentWarning)
@@ -158,7 +158,7 @@ const handleFormSubmit = async (_values: Record<string, unknown>, changedValues?
   }
 
   try {
-    await $fetch(`/api/admin/content-warnings/${contentWarningId}`, {
+    await $fetch(`/api/v1/admin/content-warnings/${contentWarningId}`, {
       method: 'PATCH',
       body: changes,
     })

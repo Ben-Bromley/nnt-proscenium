@@ -175,12 +175,6 @@
                   {{ performance.venue?.name }}
                 </div>
               </div>
-              <UBadge
-                :color="getStatusColor(performance.status)"
-                variant="soft"
-              >
-                {{ performance.status }}
-              </UBadge>
             </div>
           </div>
         </UCard>
@@ -315,7 +309,7 @@ const { formatDateTime } = useFormatters()
 
 // Fetch dashboard data
 const { data: dashboard, pending, error: fetchError } = await useFetch(
-  '/api/foh/dashboard',
+  '/api/v1/foh/dashboard',
   {
     key: 'foh-dashboard',
   },

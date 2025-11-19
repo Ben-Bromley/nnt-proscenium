@@ -22,7 +22,7 @@
 
     <DataTable
       ref="dataTable"
-      api-endpoint="/api/admin/venues"
+      api-endpoint="/api/v1/admin/venues"
       :columns="columns"
       :filters="filters"
       search-placeholder="Search venues by name or address..."

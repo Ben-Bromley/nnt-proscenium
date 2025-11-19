@@ -283,7 +283,7 @@
         color="info"
         variant="soft"
         title="Development Notice"
-        description="The walk-in sales API endpoint is not yet implemented. This form is ready and will work once the /api/foh/reservations POST endpoint is completed."
+        description="The walk-in sales API endpoint is not yet implemented. This form is ready and will work once the /api/v1/foh/reservations POST endpoint is completed."
         class="mt-6"
       />
     </div>
@@ -300,7 +300,8 @@ definePageMeta({
 interface Performance {
   id: string
   startDateTime: string
-  endDateTime?: string
+  runtimeMinutes: number
+  intervalMinutes: number
   maxCapacity: number
   show: {
     title: string
@@ -319,7 +320,7 @@ interface _SelectedPerformance extends Performance {
 
 // Fetch today's performances for dropdown
 const { data: performancesData, pending: loadingPerformances } = await useFetch(
-  '/api/foh/performances/today',
+  '/api/v1/foh/performances/today',
   {
     key: 'foh-walkin-performances',
   },
@@ -470,7 +471,7 @@ async function handleSubmit() {
     // Filter out tickets with 0 quantity
     const ticketsToReserve = formState.value.tickets.filter(t => t.quantity > 0)
 
-    const { data, error: submitError } = await useFetch('/api/foh/reservations', {
+    const { data, error: submitError } = await useFetch('/api/v1/foh/reservations', {
       method: 'POST',
       body: {
         performanceId: formState.value.performanceId,

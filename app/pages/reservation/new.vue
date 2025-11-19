@@ -40,7 +40,7 @@
               </div>
               <div class="detail-item">
                 <UIcon name="i-lucide-clock" />
-                <span>{{ formatTime(performance.startDateTime, performance.endDateTime) }}</span>
+                <span>{{ formatTime(performance.startDateTime, performance.runtimeMinutes, performance.intervalMinutes) }}</span>
               </div>
               <div
                 v-if="performance.venue"
@@ -257,7 +257,8 @@ interface TicketType {
 interface Performance {
   id: string
   startDateTime: string
-  endDateTime: string
+  runtimeMinutes: number
+  intervalMinutes: number
   maxCapacity: number
   show?: {
     title: string
@@ -295,7 +296,7 @@ async function loadPerformance() {
     loading.value = true
     error.value = null
 
-    const { data, error: fetchError } = await useFetch(`/api/performances/${performanceId}`)
+    const { data, error: fetchError } = await useFetch(`/api/v1/performances/${performanceId}`)
 
     if (fetchError.value) {
       throw new Error(fetchError.value.statusMessage || 'Failed to load performance')
@@ -409,7 +410,7 @@ async function handleSubmit() {
       tickets,
     }
 
-    const { data, error: submitError } = await useFetch('/api/reservations', {
+    const { data, error: submitError } = await useFetch('/api/v1/reservations', {
       method: 'POST',
       body: payload,
     })
@@ -445,9 +446,9 @@ function formatDate(dateString: string): string {
   }).format(date)
 }
 
-function formatTime(startString: string, endString: string): string {
+function formatTime(startString: string, runtimeMinutes: number, intervalMinutes: number): string {
   const start = new Date(startString)
-  const end = new Date(endString)
+  const end = new Date(start.getTime() + runtimeMinutes * 60000)
   const startTime = new Intl.DateTimeFormat('en-GB', {
     hour: '2-digit',
     minute: '2-digit',
@@ -456,7 +457,8 @@ function formatTime(startString: string, endString: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(end)
-  return `${startTime} - ${endTime}`
+  const intervalText = intervalMinutes > 0 ? ` (inc. ${intervalMinutes}min interval)` : ''
+  return `${startTime} - ${endTime}${intervalText}`
 }
 </script>
 

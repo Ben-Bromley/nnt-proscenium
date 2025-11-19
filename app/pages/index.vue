@@ -211,10 +211,8 @@ interface PerformanceForShow {
   id: string
   title: string
   startDateTime: string | Date
-  endDateTime: string | Date
-  status: string
-  maxCapacity: number
-  reservationsOpen: boolean
+  runtimeMinutes: number
+  intervalMinutes: number
 }
 
 interface ShowWithPerformances {
@@ -248,7 +246,7 @@ useSeoMeta({
 const { data: showsData, status: showsStatus } = await useFetch<{
   success: boolean
   data: ShowWithPerformances[]
-}>('/api/shows/whats-on')
+}>('/api/v1/shows/whats-on')
 
 const upcomingShows = computed(() => showsData.value?.data || [])
 const showsLoading = computed(() => showsStatus.value === 'pending')

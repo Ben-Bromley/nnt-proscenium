@@ -176,7 +176,7 @@ definePageMeta({
 })
 
 // Fetch available features
-const { data: featuresResponse, pending: featuresLoading, error: featuresError } = await useFetch('/api/admin/venue-features', {
+const { data: featuresResponse, pending: featuresLoading, error: featuresError } = await useFetch('/api/v1/admin/venue-features', {
   query: { isActive: 'true' },
 })
 
@@ -211,7 +211,7 @@ const handleFormSubmit = async (values: typeof defaultFormData) => {
 
   console.log('Sending API create with data:', createData)
 
-  const response = await $fetch<{ success: boolean, data: { venue: { id: string } } }>('/api/admin/venues', {
+  const response = await $fetch<{ success: boolean, data: { venue: { id: string } } }>('/api/v1/admin/venues', {
     method: 'POST',
     body: createData,
   })

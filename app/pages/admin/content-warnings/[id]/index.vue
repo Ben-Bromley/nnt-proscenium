@@ -174,7 +174,7 @@ const deleting = ref(false)
 const { formatDateTime } = useFormatters()
 
 // Fetch content warning details
-const { data, pending, error } = await useFetch(`/api/admin/content-warnings/${contentWarningId}`)
+const { data, pending, error } = await useFetch(`/api/v1/admin/content-warnings/${contentWarningId}`)
 
 // Computed values for easier access
 const contentWarningData = computed(() => data.value?.data?.contentWarning)
@@ -209,7 +209,7 @@ const handleDelete = async () => {
 
   deleting.value = true
   try {
-    await $fetch(`/api/admin/content-warnings/${contentWarningId}`, {
+    await $fetch(`/api/v1/admin/content-warnings/${contentWarningId}`, {
       method: 'DELETE',
     })
 

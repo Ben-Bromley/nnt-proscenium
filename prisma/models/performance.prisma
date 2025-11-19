@@ -1,14 +1,13 @@
 model Performance {
-  id            String   @id @default(nanoid())
-  title         String
-  startDateTime DateTime // Start date and time of the performance/event
-  endDateTime   DateTime // End date and time
+  id              String   @id @default(nanoid())
+  title           String
+  startDateTime   DateTime // Start date and time of the performance/event
+  runtimeMinutes  Int // Total runtime duration in minutes (e.g., 120 for a 2-hour show)
+  intervalMinutes Int      @default(0) // Interval/intermission duration in minutes (0 if no interval)
 
   type                    PerformanceType
   details                 String? // Additional details about the performance (or the event description)
-  status                  PerformanceBookingStatus @default(SCHEDULED)
   maxCapacity             Int // Specific capacity for this performance (might differ from Venue.capacity due to staging, etc.) // Can be set to -1 for unlimited capacity
-  reservationsOpen        Boolean                  @default(true) // TODO: Deprecate this field in favour of status
   reservationInstructions String? // Special instructions for booking this performance
   externalBookingLink     String? // URL for booking via an external platform e.g. SU Website
 
@@ -43,14 +42,4 @@ enum PerformanceType {
 
   EVENT // e.g. Oscars, Boat Party, etc.
   WORKSHOP // e.g. Stagecraft "Masterclass"
-}
-
-enum PerformanceBookingStatus {
-  SCHEDULED // Planned, but not yet open for any bookings
-  ON_SALE // General booking is open (displays on the website)
-  RESTRICTED // Booking is open, but a direct link is required (e.g., for members only)
-  CLOSED // No longer available for booking (e.g., too close to the start time)
-  SOLD_OUT
-  CANCELLED // This status can also indicate a form of "inactive" for bookings
-  PAST // The performance/event has already occurred
 }

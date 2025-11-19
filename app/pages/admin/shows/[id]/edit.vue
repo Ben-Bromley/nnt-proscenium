@@ -194,13 +194,6 @@
                       <span v-if="performance.venue">• {{ performance.venue.name }}</span>
                     </div>
                   </div>
-                  <UBadge
-                    :color="getPerformanceStatusColor(performance.status)"
-                    variant="soft"
-                    size="sm"
-                  >
-                    {{ formatPerformanceStatus(performance.status) }}
-                  </UBadge>
                 </div>
               </div>
 
@@ -259,7 +252,7 @@ const route = useRoute()
 const showId = route.params.id as string
 
 // Fetch show data
-const { data: response, pending, error } = await useFetch(`/api/admin/shows/${showId}`)
+const { data: response, pending, error } = await useFetch(`/api/v1/admin/shows/${showId}`)
 
 const show = computed(() => response.value?.data)
 
@@ -357,7 +350,7 @@ async function handleSubmit() {
       programmeUrl: formData.programmeUrl || undefined,
     }
 
-    await $fetch(`/api/admin/shows/${showId}`, {
+    await $fetch(`/api/v1/admin/shows/${showId}`, {
       method: 'PATCH',
       body: updateData,
     })

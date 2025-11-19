@@ -1,7 +1,7 @@
 /**
  * Content Warning database utilities
  */
-import prisma from '~~/lib/prisma'
+import prisma from '~~/server/database'
 import type { Prisma } from '@prisma/client'
 import { dbErrors } from './index'
 

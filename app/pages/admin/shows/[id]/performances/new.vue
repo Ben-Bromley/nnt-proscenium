@@ -108,13 +108,27 @@
                 </UFormGroup>
 
                 <UFormGroup
-                  label="End Date & Time"
-                  name="endDateTime"
+                  label="Runtime (minutes)"
+                  name="runtimeMinutes"
                   required
+                  description="Total show runtime in minutes"
                 >
                   <UInput
-                    v-model="formData.endDateTime"
-                    type="datetime-local"
+                    v-model.number="formData.runtimeMinutes"
+                    type="number"
+                    placeholder="e.g., 120 for 2 hours"
+                  />
+                </UFormGroup>
+
+                <UFormGroup
+                  label="Interval (minutes)"
+                  name="intervalMinutes"
+                  description="Interval/intermission duration (0 if none)"
+                >
+                  <UInput
+                    v-model.number="formData.intervalMinutes"
+                    type="number"
+                    placeholder="e.g., 15"
                   />
                 </UFormGroup>
               </div>
@@ -150,18 +164,6 @@
               </h2>
 
               <UFormGroup
-                label="Booking Status"
-                name="status"
-                required
-              >
-                <USelect
-                  v-model="formData.status"
-                  :items="performanceStatusOptions"
-                  placeholder="Select status"
-                />
-              </UFormGroup>
-
-              <UFormGroup
                 label="Max Capacity"
                 name="maxCapacity"
                 required
@@ -171,15 +173,6 @@
                   v-model.number="formData.maxCapacity"
                   type="number"
                   placeholder="e.g., 100"
-                />
-              </UFormGroup>
-
-              <UFormGroup
-                label="Reservations Open"
-                name="reservationsOpen"
-              >
-                <UToggle
-                  v-model="formData.reservationsOpen"
                 />
               </UFormGroup>
 
@@ -249,11 +242,11 @@ const route = useRoute()
 const showId = route.params.id as string
 
 // Fetch show data
-const { data: showResponse, pending: showPending, error: showError } = await useFetch(`/api/admin/shows/${showId}`)
+const { data: showResponse, pending: showPending, error: showError } = await useFetch(`/api/v1/admin/shows/${showId}`)
 const show = computed(() => showResponse.value?.data)
 
 // Fetch venues
-const { data: venuesResponse, pending: venuesLoading } = await useFetch('/api/admin/venues', {
+const { data: venuesResponse, pending: venuesLoading } = await useFetch('/api/v1/admin/venues', {
   query: { isActive: 'true', limit: 100 },
 })
 
@@ -294,7 +287,8 @@ const performanceFormSchema = z.object({
   title: z.string().min(1, 'Title is required').max(200),
   venueId: z.string().min(1, 'Venue is required'),
   startDateTime: z.string().min(1, 'Start date and time is required'),
-  endDateTime: z.string().min(1, 'End date and time is required'),
+  runtimeMinutes: z.number().int().min(1, 'Runtime must be at least 1 minute'),
+  intervalMinutes: z.number().int().min(0).optional(),
   type: z.enum([
     'PERFORMANCE',
     'RELAXED_PERFORMANCE',
@@ -308,35 +302,24 @@ const performanceFormSchema = z.object({
     'WORKSHOP',
   ]),
   details: z.string().max(2000).optional(),
-  status: z.enum(['SCHEDULED', 'ON_SALE', 'RESTRICTED', 'CLOSED', 'SOLD_OUT', 'CANCELLED']),
   maxCapacity: z.number().int().min(-1),
-  reservationsOpen: z.boolean(),
   reservationInstructions: z.string().max(1000).optional(),
   externalBookingLink: z.string().url().optional().or(z.literal('')),
-}).refine((data) => {
-  const start = new Date(data.startDateTime)
-  const end = new Date(data.endDateTime)
-  return start < end
-}, {
-  message: 'End date time must be after start date time',
-  path: ['endDateTime'],
 })
 
 // Initialize form with smart defaults
 const now = new Date()
 const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-const twoHoursLater = new Date(nextWeek.getTime() + 2 * 60 * 60 * 1000)
 
 const formData = reactive({
   title: 'Performance',
   venueId: '',
   startDateTime: nextWeek.toISOString().slice(0, 16),
-  endDateTime: twoHoursLater.toISOString().slice(0, 16),
+  runtimeMinutes: 120,
+  intervalMinutes: 15,
   type: 'PERFORMANCE' as const,
   details: '',
-  status: 'SCHEDULED' as const,
   maxCapacity: 100,
-  reservationsOpen: true,
   reservationInstructions: '',
   externalBookingLink: '',
 })
@@ -351,18 +334,17 @@ async function handleSubmit() {
     const performanceData = {
       title: formData.title,
       startDateTime: new Date(formData.startDateTime).toISOString(),
-      endDateTime: new Date(formData.endDateTime).toISOString(),
+      runtimeMinutes: Number(formData.runtimeMinutes),
+      intervalMinutes: Number(formData.intervalMinutes || 0),
       type: formData.type,
       details: formData.details || undefined,
-      status: formData.status,
       maxCapacity: Number(formData.maxCapacity),
-      reservationsOpen: formData.reservationsOpen,
       reservationInstructions: formData.reservationInstructions || undefined,
       externalBookingLink: formData.externalBookingLink || undefined,
       venueId: formData.venueId || undefined,
     }
 
-    await $fetch(`/api/admin/shows/${showId}/performances`, {
+    await $fetch(`/api/v1/admin/shows/${showId}/performances`, {
       method: 'POST',
       body: performanceData,
     })
