@@ -34,6 +34,14 @@
             aria-label="View performance"
             @click="navigateTo(`/admin/performances/${row.original.id}`)"
           />
+          <UButton
+            icon="i-lucide-ticket"
+            color="neutral"
+            variant="ghost"
+            size="sm"
+            aria-label="View reservations"
+            @click="navigateTo(`/admin/performances/${row.original.id}/reservations`)"
+          />
         </template>
       </DataTable>
     </div>
